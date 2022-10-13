@@ -97,7 +97,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="template_fs.glsl">
+    <None Include="jello_fs.glsl">
       <Filter>shaders</Filter>
     </None>
     <None Include="template_vs.glsl">
