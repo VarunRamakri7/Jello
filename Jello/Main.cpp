@@ -31,17 +31,26 @@ static const std::string mesh_name = "Amago0.obj";
 MeshData mesh_data;
 
 struct LightUniforms {
-    glm::vec4 Position = glm::vec4(1.0f); // Light position in eye coords.
-    glm::vec3 La = glm::vec3(0.85f); // Ambient light intesity
-    glm::vec3 L = glm::vec3(1.0f); // Diffuse and specular light intensity
+    glm::vec4 La = glm::vec4(0.5f, 0.5f, 0.55f, 1.0f);	//ambient light color
+    glm::vec4 Ld = glm::vec4(0.5f, 0.5f, 0.25f, 1.0f);	//diffuse light color
+    glm::vec4 Ls = glm::vec4(0.3f);	//specular light color
+    glm::vec4 light_w = glm::vec4(0.0f, 1.2, 1.0f, 1.0f); //world-space light position
 } LightData;
 
 struct MaterialUniforms {
-    glm::vec3 Ka = glm::vec3(0.65f); // Ambient reflectivity
-    glm::vec3 Kd = glm::vec3(0.65f); // Diffuse reflectivity
-    glm::vec3 Ks = glm::vec3(0.85f); // Specular reflectivity
-    float shininess = 0.95f; // Specular shininess factor
+    glm::vec3 Ka = glm::vec3(1.0f); // Ambient color
+    glm::vec3 Kd = glm::vec3(1.0f); // Diffuse color
+    glm::vec3 Ks = glm::vec3(1.0f); // Specular color
+    float shininess = 20.0f; // Specular shininess
 } MaterialData;
+
+//Locations for the uniforms which are not in uniform blocks
+namespace UniformLocs
+{
+    int M = 0;
+    int PV = 1;
+    int time = 2;
+}
 
 GLuint light_ubo = -1;
 GLuint material_ubo = -1;
@@ -103,14 +112,15 @@ void draw_gui(GLFWwindow* window)
 
    ImGui::Begin("Scene");
 
-   ImGui::SliderFloat3("Light Position", &LightData.Position.x, -10.0f, 10.0f);
+   ImGui::SliderFloat3("Light Position", &LightData.light_w.x, -10.0f, 10.0f);
    ImGui::ColorEdit3("Ambient Intensity", &LightData.La.r, 0);
-   ImGui::ColorEdit3("Dif and Spec Intensity", &LightData.L.r, 0);
+   ImGui::ColorEdit3("Dif Intensity", &LightData.Ld.r, 0);
+   ImGui::ColorEdit3("Spec Intensity", &LightData.Ls.r, 0);
 
    ImGui::ColorEdit3("Ambient Refl", &MaterialData.Ka.r, 0);
    ImGui::ColorEdit3("Diffuse Refl", &MaterialData.Kd.r, 0);
    ImGui::ColorEdit3("Specular Refl", &MaterialData.Ks.r, 0);
-   ImGui::SliderFloat("Shininess", &MaterialData.shininess, 0.0f, 1.0f);
+   ImGui::SliderFloat("Shininess", &MaterialData.shininess, 0.0f, 100.0f);
 
    ImGui::End();
 
@@ -131,16 +141,17 @@ void display(GLFWwindow* window)
 
     glUseProgram(shader_program);
 
+    // Get location for shader uniform variable
+    glm::mat4 PV = P * V;
+    glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
+
+    glUniformMatrix4fv(UniformLocs::M, 1, false, glm::value_ptr(M));
+
     glBindBuffer(GL_UNIFORM_BUFFER, material_ubo); //Bind the OpenGL UBO before we update the data.
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(MaterialUniforms), &MaterialData); //Upload the new uniform values.
 
     glBindBuffer(GL_UNIFORM_BUFFER, light_ubo); //Bind the OpenGL UBO before we update the data.
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(LightUniforms), &LightData); //Upload the new uniform values.
-
-    // Get location for shader uniform variable
-    glm::mat4 PVM = P * V * M;
-    int PVM_loc = glGetUniformLocation(shader_program, "PVM");
-    glUniformMatrix4fv(PVM_loc, 1, false, glm::value_ptr(PVM));
 
     glBindVertexArray(mesh_data.mVao);
     glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
