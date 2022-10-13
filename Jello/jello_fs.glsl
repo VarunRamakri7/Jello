@@ -44,7 +44,6 @@ vec3 blinnPhong(vec3 pos, vec3 n)
 
 void main(void)
 {   
-	//vec3 offset = vec3(float(gl_InstanceID % 2), float(gl_InstanceID / 2) - 1.0f, 0.0f);
     fragcolor = vec4(blinnPhong(position, normal), 1.0f);
 
 	//fragcolor = vec4(tex_coord, 0.0f, 1.0f); // Color as texture coordinates
