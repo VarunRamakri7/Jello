@@ -27,13 +27,11 @@ static const std::string fragment_shader("template_fs.glsl");
 GLuint shader_program = -1;
 
 static const std::string mesh_name = "Amago0.obj";
-static const std::string texture_name = "AmagoT.bmp";
 
-GLuint texture_id = -1; //Texture map for mesh
 MeshData mesh_data;
 
-float angle = 0.0f;
-float scale = 1.0f;
+float angle = 0.9f;
+float scale = 2.5f;
 bool recording = false;
 
 void draw_gui(GLFWwindow* window)
@@ -97,12 +95,6 @@ void display(GLFWwindow* window)
    glm::mat4 P = glm::perspective(glm::pi<float>()/4.0f, 1.0f, 0.1f, 100.0f);
 
    glUseProgram(shader_program);
-
-   glActiveTexture(GL_TEXTURE0);
-   glBindTexture(GL_TEXTURE_2D, texture_id);
-   int tex_loc = glGetUniformLocation(shader_program, "diffuse_tex");
-   glUniform1i(tex_loc, 0); // we bound our texture to texture unit 0
-
 
    //Get location for shader uniform variable
    glm::mat4 PVM = P*V*M;
@@ -205,12 +197,9 @@ void initOpenGL()
 
    reload_shader();
    mesh_data = LoadMesh(mesh_name);
-   texture_id = LoadTexture(texture_name);
+   //texture_id = LoadTexture(texture_name);
 }
 
-
-
-//C++ programs start executing in the main() function.
 int main(int argc, char **argv)
 {
    GLFWwindow* window;

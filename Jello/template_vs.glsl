@@ -10,6 +10,6 @@ out vec2 tex_coord;
 
 void main(void)
 {
-	gl_Position = PVM*vec4(pos_attrib, 1.0); //transform vertices and send result into pipeline
+	gl_Position = PVM * vec4(pos_attrib, 1.0); //transform vertices and send result into pipeline
 	tex_coord = tex_coord_attrib; //send tex_coord to fragment shader
 }
