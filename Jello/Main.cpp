@@ -18,8 +18,6 @@
 #include "LoadTexture.h"   //Functions for creating OpenGL textures from image files
 #include "VideoMux.h"      //Functions for saving videos
 
-const int init_window_width = 800;
-const int init_window_height = 800;
 const char* const window_title = "Jello";
 
 static const std::string vertex_shader("template_vs.glsl");
@@ -30,17 +28,24 @@ static const std::string mesh_name = "Amago0.obj";
 
 MeshData mesh_data;
 
+struct CameraUniforms {
+    glm::vec3 eye = glm::vec3(0.0f, 0.0f, 3.0f);
+    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::ivec2 resolution = glm::ivec2(800, 800);
+    float aspect = resolution.x / resolution.y;
+}CameraData;
+
 struct LightUniforms {
-    glm::vec4 La = glm::vec4(0.5f, 0.5f, 0.55f, 1.0f);	//ambient light color
-    glm::vec4 Ld = glm::vec4(0.5f, 0.5f, 0.25f, 1.0f);	//diffuse light color
-    glm::vec4 Ls = glm::vec4(0.3f);	//specular light color
-    glm::vec4 light_w = glm::vec4(0.0f, 1.2, 1.0f, 1.0f); //world-space light position
+    glm::vec4 La = glm::vec4(0.5f, 0.5f, 0.55f, 1.0f); // Ambient light color
+    glm::vec4 Ld = glm::vec4(0.95f, 0.95f, 0.15f, 1.0f); // Diffuse light color
+    glm::vec4 Ls = glm::vec4(0.3f);	// Specular light color
+    glm::vec4 light_w = glm::vec4(-10.0f, 10.0f, 5.0f, 1.0f); // World-space light position
 } LightData;
 
 struct MaterialUniforms {
-    glm::vec3 Ka = glm::vec3(1.0f); // Ambient color
-    glm::vec3 Kd = glm::vec3(1.0f); // Diffuse color
-    glm::vec3 Ks = glm::vec3(1.0f); // Specular color
+    glm::vec3 Ka = glm::vec3(0.25f); // Ambient color
+    glm::vec3 Kd = glm::vec3(0.75f, 0.55f, 0.95f); // Diffuse color
+    glm::vec3 Ks = glm::vec3(0.45f, 0.45f, 0.45f); // Specular color
     float shininess = 20.0f; // Specular shininess
 } MaterialData;
 
@@ -54,11 +59,13 @@ namespace UniformLocs
 
 GLuint light_ubo = -1;
 GLuint material_ubo = -1;
+GLuint camera_ubo = -1;
 
 namespace UboBinding
 {
     int light = 0;
     int material = 1;
+    int camera = 2;
 }
 
 float angle = 2.25f;
@@ -136,8 +143,8 @@ void display(GLFWwindow* window)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glm::mat4 M = glm::rotate(angle, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::vec3(scale * mesh_data.mScaleFactor));
-    glm::mat4 V = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::mat4 P = glm::perspective(glm::pi<float>() / 4.0f, 1.0f, 0.1f, 100.0f);
+    glm::mat4 V = glm::lookAt(CameraData.eye, glm::vec3(0.0f), CameraData.up);
+    glm::mat4 P = glm::perspective(glm::pi<float>() / 4.0f, CameraData.aspect, 0.1f, 100.0f);
 
     glUseProgram(shader_program);
 
@@ -152,6 +159,9 @@ void display(GLFWwindow* window)
 
     glBindBuffer(GL_UNIFORM_BUFFER, light_ubo); //Bind the OpenGL UBO before we update the data.
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(LightUniforms), &LightData); //Upload the new uniform values.
+
+    glBindBuffer(GL_UNIFORM_BUFFER, camera_ubo); //Bind the OpenGL UBO before we update the data.
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUniforms), &CameraData); //Upload the new uniform values.
 
     glBindVertexArray(mesh_data.mVao);
     glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
@@ -235,6 +245,13 @@ void mouse_button(GLFWwindow* window, int button, int action, int mods)
     //std::cout << "button : "<< button << ", action: " << action << ", mods: " << mods << std::endl;
 }
 
+void resize(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height); // Set viewport to cover entire framebuffer
+    CameraData.resolution = glm::ivec2(width, height);
+    CameraData.aspect = float(width) / float(height); // Set aspect ratio
+}
+
 //Initialize OpenGL state. This function only gets called once.
 void initOpenGL()
 {
@@ -253,11 +270,17 @@ void initOpenGL()
     glBufferData(GL_UNIFORM_BUFFER, sizeof(MaterialUniforms), &MaterialData, GL_STREAM_DRAW);
     glBindBufferBase(GL_UNIFORM_BUFFER, UboBinding::material, material_ubo);
 
-    // for MaterialUniforms
+    // for LightUniforms
     glGenBuffers(1, &light_ubo);
     glBindBuffer(GL_UNIFORM_BUFFER, light_ubo);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(LightUniforms), &LightData, GL_STREAM_DRAW);
     glBindBufferBase(GL_UNIFORM_BUFFER, UboBinding::light, light_ubo);
+
+    // for CameraUniforms
+    glGenBuffers(1, &camera_ubo);
+    glBindBuffer(GL_UNIFORM_BUFFER, camera_ubo);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(CameraUniforms), &CameraData, GL_STREAM_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, UboBinding::camera, camera_ubo);
 
     reload_shader();
     mesh_data = LoadMesh(mesh_name);
@@ -274,7 +297,7 @@ int main(int argc, char** argv)
     }
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(init_window_width, init_window_height, window_title, NULL, NULL);
+    window = glfwCreateWindow(CameraData.resolution.x, CameraData.resolution.y, window_title, NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -285,6 +308,7 @@ int main(int argc, char** argv)
     glfwSetKeyCallback(window, keyboard);
     glfwSetCursorPosCallback(window, mouse_cursor);
     glfwSetMouseButtonCallback(window, mouse_button);
+    glfwSetFramebufferSizeCallback(window, resize);
 
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
