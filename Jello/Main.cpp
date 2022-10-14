@@ -36,17 +36,13 @@ struct CameraUniforms {
 }CameraData;
 
 struct LightUniforms {
-    glm::vec4 La = glm::vec4(0.5f, 0.5f, 0.55f, 1.0f); // Ambient light color
-    glm::vec4 Ld = glm::vec4(0.95f, 0.95f, 0.15f, 1.0f); // Diffuse light color
-    glm::vec4 Ls = glm::vec4(0.3f);	// Specular light color
     glm::vec4 light_w = glm::vec4(-10.0f, 10.0f, 5.0f, 1.0f); // World-space light position
 } LightData;
 
 struct MaterialUniforms {
-    glm::vec3 Ka = glm::vec3(0.25f); // Ambient color
-    glm::vec3 Kd = glm::vec3(0.75f, 0.55f, 0.95f); // Diffuse color
-    glm::vec3 Ks = glm::vec3(0.45f, 0.45f, 0.45f); // Specular color
-    float shininess = 20.0f; // Specular shininess
+    glm::vec4 base_color = glm::vec4(0.35f, 0.35f, 0.35f, 1.0f); // base color
+    glm::vec4 spec_color = glm::vec4(0.85f, 0.85f, 0.85f, 1.0f); // Specular Color
+    float spec_factor = 2.0f; // Specular factor
 } MaterialData;
 
 //Locations for the uniforms which are not in uniform blocks
@@ -127,14 +123,10 @@ void draw_gui(GLFWwindow* window)
    ImGui::Begin("Shading");
 
    ImGui::SliderFloat3("Light Position", &LightData.light_w.x, -10.0f, 10.0f);
-   ImGui::ColorEdit3("Ambient Intensity", &LightData.La.r, 0);
-   ImGui::ColorEdit3("Dif Intensity", &LightData.Ld.r, 0);
-   ImGui::ColorEdit3("Spec Intensity", &LightData.Ls.r, 0);
 
-   ImGui::ColorEdit3("Ambient Refl", &MaterialData.Ka.r, 0);
-   ImGui::ColorEdit3("Diffuse Refl", &MaterialData.Kd.r, 0);
-   ImGui::ColorEdit3("Specular Refl", &MaterialData.Ks.r, 0);
-   ImGui::SliderFloat("Shininess", &MaterialData.shininess, 0.0f, 100.0f);
+   ImGui::ColorEdit3("Base Color", &MaterialData.base_color.r, 0);
+   ImGui::ColorEdit3("Specular Color", &MaterialData.spec_color.r, 0);
+   ImGui::SliderFloat("Specular Factor", &MaterialData.spec_factor, 1.0f, 10.0f);
 
    ImGui::End();
 
@@ -269,7 +261,9 @@ void initOpenGL()
     std::cout << "Renderer: " << glGetString(GL_RENDERER) << std::endl;
     std::cout << "Version: " << glGetString(GL_VERSION) << std::endl;
     std::cout << "GLSL Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
-    glEnable(GL_DEPTH_TEST);
+    //glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_SRC_COLOR);
 
     // for MaterialUniforms
     glGenBuffers(1, &material_ubo);
