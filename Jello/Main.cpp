@@ -24,12 +24,12 @@ static const std::string vertex_shader("template_vs.glsl");
 static const std::string fragment_shader("jello_fs.glsl");
 GLuint shader_program = -1;
 
-static const std::string mesh_name = "Amago0.obj";
+static const std::string mesh_name = "RubiksCube_01.obj";
 
 MeshData mesh_data;
 
 struct CameraUniforms {
-    glm::vec3 eye = glm::vec3(0.0f, 0.0f, 3.0f);
+    glm::vec3 eye = glm::vec3(0.0f, 2.5f, 3.0f);
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::ivec2 resolution = glm::ivec2(800, 800);
     float aspect = resolution.x / resolution.y;
@@ -68,8 +68,8 @@ namespace UboBinding
     int camera = 2;
 }
 
-float angle = 2.25f;
-float scale = 2.5f;
+float angle = 0.75f;
+float scale = 0.5f;
 bool recording = false;
 
 void draw_gui(GLFWwindow* window)
@@ -117,7 +117,14 @@ void draw_gui(GLFWwindow* window)
    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
    ImGui::End();
 
-   ImGui::Begin("Scene");
+   ImGui::Begin("Camera");
+
+   ImGui::SliderFloat3("Camera Eye", &CameraData.eye.x, -10.0f, 10.0f);
+
+   ImGui::End();
+
+
+   ImGui::Begin("Shading");
 
    ImGui::SliderFloat3("Light Position", &LightData.light_w.x, -10.0f, 10.0f);
    ImGui::ColorEdit3("Ambient Intensity", &LightData.La.r, 0);
