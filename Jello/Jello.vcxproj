@@ -181,6 +181,7 @@
     <ClInclude Include="InitShader.h" />
     <ClInclude Include="LoadMesh.h" />
     <ClInclude Include="LoadTexture.h" />
+    <ClInclude Include="trackball.h" />
     <ClInclude Include="VideoMux.h" />
   </ItemGroup>
   <ItemGroup>

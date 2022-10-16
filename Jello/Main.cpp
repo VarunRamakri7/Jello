@@ -17,6 +17,9 @@
 #include "LoadMesh.h"      //Functions for creating OpenGL buffers from mesh files
 #include "LoadTexture.h"   //Functions for creating OpenGL textures from image files
 #include "VideoMux.h"      //Functions for saving videos
+#include "trackball.h"
+
+#include <glm/gtx/string_cast.hpp> // for debug
 
 #include "Cube.h"
 
@@ -40,6 +43,10 @@ bool recording = false;
 
 bool showDiscrete = true;
 bool showSurface = false;
+
+TrackBallC trackball;
+bool mouseLeft, mouseMid, mouseRight;
+GLdouble mouseX, mouseY;
 
 Cube* myCube;
 
@@ -95,6 +102,64 @@ void draw_gui(GLFWwindow* window)
    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
+//set the callbacks for the virtual trackball
+//this is executed when the mouse is moving
+void MouseCallback(GLFWwindow* window, double x, double y) {
+    //do not forget to pass the events to ImGUI!
+    ImGuiIO& io = ImGui::GetIO();
+    io.AddMousePosEvent(x, y);
+    if (io.WantCaptureMouse) return; //make sure you do not call this callback when over a menu
+    //now process them
+    mouseX = x;
+    mouseY = y;
+
+    //we need to perform an action only if a button is pressed
+    if (mouseLeft)  trackball.Rotate(mouseX, mouseY);
+    if (mouseMid)   trackball.Translate(mouseX, mouseY);
+    if (mouseRight) trackball.Zoom(mouseX, mouseY);
+}
+
+//set the variables when the button is pressed or released
+void MouseButtonCallback(GLFWwindow* window, int button, int state, int mods) {
+    //do not forget to pass the events to ImGUI!
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.AddMouseButtonEvent(button, state);
+    if (io.WantCaptureMouse) return; //make sure you do not call this callback when over a menu
+   
+    //process them
+    if (button == GLFW_MOUSE_BUTTON_LEFT && state == GLFW_PRESS)
+    {
+        trackball.Set(window, true, mouseX, mouseY);
+        mouseLeft = true;
+    }
+    if (button == GLFW_MOUSE_BUTTON_LEFT && state == GLFW_RELEASE)
+    {
+        trackball.Set(window, false, mouseX, mouseY);
+        mouseLeft = false;
+    }
+    if (button == GLFW_MOUSE_BUTTON_MIDDLE && state == GLFW_PRESS)
+    {
+        trackball.Set(window, true, mouseX, mouseY);
+        mouseMid = true;
+    }
+    if (button == GLFW_MOUSE_BUTTON_MIDDLE && state == GLFW_RELEASE)
+    {
+        trackball.Set(window, true, mouseX, mouseY);
+        mouseMid = false;
+    }
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && state == GLFW_PRESS)
+    {
+        trackball.Set(window, true, mouseX, mouseY);
+        mouseRight = true;
+    }
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && state == GLFW_RELEASE)
+    {
+        trackball.Set(window, true, mouseX, mouseY);
+        mouseRight = false;
+    }
+}
+
 // This function gets called every time the scene gets redisplayed
 void display(GLFWwindow* window)
 {
@@ -102,10 +167,10 @@ void display(GLFWwindow* window)
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
    //glm::mat4 M = glm::rotate(angle, glm::vec3(0.0f, 1.0f, 0.0f))*glm::scale(glm::vec3(scale*mesh_data.mScaleFactor));
-   glm::mat4 M = myCube->getModelMatrix();
-   glm::mat4 V = glm::lookAt(glm::vec3(0.0f, 0.0f, 20.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-   glm::mat4 P = glm::perspective(glm::pi<float>()/4.0f, 1.0f, 0.1f, 100.0f);
-
+   glm::mat4 M = myCube->getModelMatrix() * trackball.Set3DViewCameraMatrix();
+   glm::mat4 V = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+   glm::mat4 P = glm::perspective(65.f, 1.f, 0.01f, 1000.f);
+   //std::cout << glm::to_string(M) << std::endl;
    glUseProgram(shader_program);
 
    myCube->render(1, showSurface);
@@ -113,7 +178,6 @@ void display(GLFWwindow* window)
    //glBindTexture(GL_TEXTURE_2D, texture_id);
    //int tex_loc = glGetUniformLocation(shader_program, "diffuse_tex");
    //glUniform1i(tex_loc, 0); // we bound our texture to texture unit 0
-
 
    //Get location for shader uniform variable
    glm::mat4 PVM = P*V*M;
@@ -232,6 +296,11 @@ int main(int argc, char **argv)
       return -1;
    }
 
+   // negotiate with the OpenGL
+   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
    /* Create a windowed mode window and its OpenGL context */
    window = glfwCreateWindow(init_window_width, init_window_height, window_title, NULL, NULL);
    if (!window)
@@ -240,13 +309,12 @@ int main(int argc, char **argv)
       return -1;
    }
 
-   //Register callback functions with glfw. 
-   glfwSetKeyCallback(window, keyboard);
-   glfwSetCursorPosCallback(window, mouse_cursor);
-   glfwSetMouseButtonCallback(window, mouse_button);
-
    /* Make the window's context current */
    glfwMakeContextCurrent(window);
+   //Register callback functions with glfw. 
+   glfwSetKeyCallback(window, keyboard);
+   glfwSetCursorPosCallback(window, MouseCallback);
+   glfwSetMouseButtonCallback(window, MouseButtonCallback);
 
    initOpenGL();
    myCube = new Cube(8);
