@@ -18,6 +18,8 @@
 #include "LoadTexture.h"   //Functions for creating OpenGL textures from image files
 #include "VideoMux.h"      //Functions for saving videos
 
+#include "Cube.h"
+
 const int init_window_width = 800;
 const int init_window_height = 800;
 const char* const window_title = "Jello";
@@ -35,6 +37,11 @@ MeshData mesh_data;
 float angle = 0.0f;
 float scale = 1.0f;
 bool recording = false;
+
+bool showDiscrete = true;
+bool showSurface = false;
+
+Cube* myCube;
 
 void draw_gui(GLFWwindow* window)
 {
@@ -78,6 +85,8 @@ void draw_gui(GLFWwindow* window)
    ImGui::SliderFloat("View angle", &angle, -glm::pi<float>(), +glm::pi<float>());
    ImGui::SliderFloat("Scale", &scale, -10.0f, +10.0f);
 
+   ImGui::Checkbox("Show surface", &showSurface);
+
    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
    ImGui::End();
 
@@ -91,17 +100,19 @@ void display(GLFWwindow* window)
 {
    //Clear the screen to the color previously specified in the glClearColor(...) call.
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-   
-   glm::mat4 M = glm::rotate(angle, glm::vec3(0.0f, 1.0f, 0.0f))*glm::scale(glm::vec3(scale*mesh_data.mScaleFactor));
-   glm::mat4 V = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+   //glm::mat4 M = glm::rotate(angle, glm::vec3(0.0f, 1.0f, 0.0f))*glm::scale(glm::vec3(scale*mesh_data.mScaleFactor));
+   glm::mat4 M = myCube->getModelMatrix();
+   glm::mat4 V = glm::lookAt(glm::vec3(0.0f, 0.0f, 20.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
    glm::mat4 P = glm::perspective(glm::pi<float>()/4.0f, 1.0f, 0.1f, 100.0f);
 
    glUseProgram(shader_program);
 
-   glActiveTexture(GL_TEXTURE0);
-   glBindTexture(GL_TEXTURE_2D, texture_id);
-   int tex_loc = glGetUniformLocation(shader_program, "diffuse_tex");
-   glUniform1i(tex_loc, 0); // we bound our texture to texture unit 0
+   myCube->render(1, showSurface);
+   //glActiveTexture(GL_TEXTURE0);
+   //glBindTexture(GL_TEXTURE_2D, texture_id);
+   //int tex_loc = glGetUniformLocation(shader_program, "diffuse_tex");
+   //glUniform1i(tex_loc, 0); // we bound our texture to texture unit 0
 
 
    //Get location for shader uniform variable
@@ -110,7 +121,7 @@ void display(GLFWwindow* window)
    glUniformMatrix4fv(PVM_loc, 1, false, glm::value_ptr(PVM));
 
    glBindVertexArray(mesh_data.mVao);
-   glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
+   //glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
    //For meshes with multiple submeshes use mesh_data.DrawMesh(); 
 
    draw_gui(window);
@@ -238,6 +249,7 @@ int main(int argc, char **argv)
    glfwMakeContextCurrent(window);
 
    initOpenGL();
+   myCube = new Cube(8);
    
    //Init ImGui
    IMGUI_CHECKVERSION();
