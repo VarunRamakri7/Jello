@@ -41,8 +41,8 @@ float angle = 0.0f;
 float scale = 1.0f;
 bool recording = false;
 
-bool showDiscrete = true;
-bool showSurface = false;
+
+bool showDiscrete = false;
 
 TrackBallC trackball;
 bool mouseLeft, mouseMid, mouseRight;
@@ -92,7 +92,7 @@ void draw_gui(GLFWwindow* window)
    ImGui::SliderFloat("View angle", &angle, -glm::pi<float>(), +glm::pi<float>());
    ImGui::SliderFloat("Scale", &scale, -10.0f, +10.0f);
 
-   ImGui::Checkbox("Show surface", &showSurface);
+   ImGui::Checkbox("Show discrete", &showDiscrete);
 
    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
    ImGui::End();
@@ -173,7 +173,7 @@ void display(GLFWwindow* window)
    //std::cout << glm::to_string(M) << std::endl;
    glUseProgram(shader_program);
 
-   myCube->render(1, showSurface);
+   myCube->render(1, showDiscrete);
    //glActiveTexture(GL_TEXTURE0);
    //glBindTexture(GL_TEXTURE_2D, texture_id);
    //int tex_loc = glGetUniformLocation(shader_program, "diffuse_tex");
@@ -318,6 +318,7 @@ int main(int argc, char **argv)
 
    initOpenGL();
    myCube = new Cube(8);
+   myCube->setSpringMode(true, false, false);
    
    //Init ImGui
    IMGUI_CHECKVERSION();
