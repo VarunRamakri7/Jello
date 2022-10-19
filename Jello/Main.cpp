@@ -181,10 +181,12 @@ void display(GLFWwindow* window)
     glBindBuffer(GL_UNIFORM_BUFFER, camera_ubo); //Bind the OpenGL UBO before we update the data.
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUniforms), &CameraData); //Upload the new uniform values.
 
+    // Draw background
     glUniform1i(UniformLocs::pass, BACKGROUND);
     glBindVertexArray(background_vao);
-    glDrawArrays(GL_POINTS, 0, 4);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
 
+    // Draw cube
     glUniform1i(UniformLocs::pass, DEFAULT);
     glBindVertexArray(mesh_data.mVao);
     glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
@@ -311,20 +313,15 @@ void initOpenGL()
     glBindBufferBase(GL_UNIFORM_BUFFER, UboBinding::camera, camera_ubo);
 
     // For background
-    glGenBuffers(1, &background_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, background_vbo);
-    glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::vec3), background_vertices, GL_STREAM_DRAW);
-    glBindBufferBase(GL_ARRAY_BUFFER, 0, background_vbo);
-
     glGenVertexArrays(1, &background_vao);
+    glGenBuffers(1, &background_vbo);
     glBindVertexArray(background_vao);
 
     glBindBuffer(GL_ARRAY_BUFFER, background_vbo);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), nullptr);
-    
-    // Unbing VAO, and VBO
-    //glEnableVertexAttribArray(0);
-    //glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(background_vertices), background_vertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec3), (void*)0);
+    glEnableVertexAttribArray(0);
 
     reload_shader();
 
