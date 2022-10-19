@@ -313,15 +313,14 @@ void initOpenGL()
     // For background
     glGenBuffers(1, &background_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, background_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * 4, background_vertices, GL_STREAM_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::vec3), background_vertices, GL_STREAM_DRAW);
     glBindBufferBase(GL_ARRAY_BUFFER, 0, background_vbo);
 
-    // Generate and bind VAO for background
     glGenVertexArrays(1, &background_vao);
     glBindVertexArray(background_vao);
 
     glBindBuffer(GL_ARRAY_BUFFER, background_vbo);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), nullptr); // Bind buffer containing particle positions to VAO
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), nullptr);
     
     // Unbing VAO, and VBO
     //glEnableVertexAttribArray(0);
