@@ -40,17 +40,19 @@ vec4 HackTransparency()
 
 void main(void)
 {
-    fragcolor = min(HackTransparency(), vec4(1.0));
-
-    /*switch(pass)
+    switch(pass)
     {
         case 0: // Render Background
+            fragcolor = vec4(position.x / 2.0f + 0.5f, position.y / 2.0f + 0.5f, position.z, 1.0f);
             break;
         case 1: // Render mesh back faces and store eye-space depth
             break;
         case 2: // Render front faces, compute eye-space depth
             break;
-    }*/
+        default:
+            fragcolor = min(HackTransparency(), vec4(1.0));
+            break;
+    }
 
 	//fragcolor = vec4(normal, 1.0f); // Color as normals
 }

@@ -28,6 +28,16 @@ static const std::string mesh_name = "RubiksCube_01.obj";
 
 MeshData mesh_data;
 
+GLuint background_vao = -1;
+GLuint background_vbo = -1;
+const glm::vec3 background_vertices[4] =
+{
+    glm::vec3(1.0f, 1.0f, 0.0f),
+    glm::vec3(1.0f, 0.0f, 0.0f),
+    glm::vec3(0.0f, 0.0f, 0.0f),
+    glm::vec3(0.0f, 1.0f, 0.0f)
+};
+
 struct CameraUniforms {
     glm::vec3 eye = glm::vec3(0.0f, 2.5f, 3.0f);
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -69,7 +79,8 @@ enum PASS
 {
     BACKGROUND, // Render background
     BACK_FACES, // Render mesh back faces and store eye-space depth
-    FRONT_FACES // Render front faces, compute eye-space depth
+    FRONT_FACES, // Render front faces, compute eye-space depth
+    DEFAULT
 };
 
 float angle = 0.75f;
@@ -170,9 +181,15 @@ void display(GLFWwindow* window)
     glBindBuffer(GL_UNIFORM_BUFFER, camera_ubo); //Bind the OpenGL UBO before we update the data.
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUniforms), &CameraData); //Upload the new uniform values.
 
+    glUniform1i(UniformLocs::pass, BACKGROUND);
+    glBindVertexArray(background_vao);
+    glDrawArrays(GL_POINTS, 0, 4);
+
+    glUniform1i(UniformLocs::pass, DEFAULT);
     glBindVertexArray(mesh_data.mVao);
     glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
-    //For meshes with multiple submeshes use mesh_data.DrawMesh(); 
+
+    glBindVertexArray(0);
 
     draw_gui(window);
 
@@ -195,8 +212,8 @@ void idle()
     float time_sec = static_cast<float>(glfwGetTime());
 
     //Pass time_sec value to the shaders
-    int time_loc = glGetUniformLocation(shader_program, "time");
-    glUniform1f(time_loc, time_sec);
+    //int time_loc = glGetUniformLocation(shader_program, "time");
+    glUniform1f(UniformLocs::time, time_sec);
 }
 
 void reload_shader()
@@ -293,7 +310,25 @@ void initOpenGL()
     glBufferData(GL_UNIFORM_BUFFER, sizeof(CameraUniforms), &CameraData, GL_STREAM_DRAW);
     glBindBufferBase(GL_UNIFORM_BUFFER, UboBinding::camera, camera_ubo);
 
+    // For background
+    glGenBuffers(1, &background_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, background_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * 4, background_vertices, GL_STREAM_DRAW);
+    glBindBufferBase(GL_ARRAY_BUFFER, 0, background_vbo);
+
+    // Generate and bind VAO for background
+    glGenVertexArrays(1, &background_vao);
+    glBindVertexArray(background_vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, background_vbo);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), nullptr); // Bind buffer containing particle positions to VAO
+    
+    // Unbing VAO, and VBO
+    //glEnableVertexAttribArray(0);
+    //glBindBuffer(GL_ARRAY_BUFFER, 0);
+
     reload_shader();
+
     mesh_data = LoadMesh(mesh_name);
 }
 

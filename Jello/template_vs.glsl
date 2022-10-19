@@ -3,6 +3,7 @@
 layout(location = 0) uniform mat4 M;
 layout(location = 1) uniform mat4 PV;
 layout(location = 2) uniform float time;
+layout(location = 3) uniform int pass;
 
 layout(std140, binding = 0) uniform LightUniforms {
    vec4 light_w; // world-space light position
@@ -15,7 +16,7 @@ layout(std140, binding = 2) uniform CameraUniforms {
     float aspect;
 } Camera;
 
-in vec3 pos_attrib; // This variable holds the position of mesh vertices
+in vec3 pos_attrib; // This variable holds the position of vertices
 in vec2 tex_coord_attrib;
 in vec3 normal_attrib;  
 
@@ -34,6 +35,11 @@ void main(void)
 
 	position = vec3(M * vec4(pos_attrib, 1.0)); // World-space vertex position
 	normal = normalize(M * vec4(normal_attrib, 0.0)).xyz;
+
+	if (pass == 0)
+	{
+		position = pos_attrib;
+	}
 
 	gl_Position = PV * vec4(position, 1.0);
 }
