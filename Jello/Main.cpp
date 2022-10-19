@@ -17,6 +17,7 @@
 #include "LoadMesh.h"      //Functions for creating OpenGL buffers from mesh files
 #include "LoadTexture.h"   //Functions for creating OpenGL textures from image files
 #include "VideoMux.h"      //Functions for saving videos
+#include "DebugCallback.h" // Functions for debugging glsl
 
 const char* const window_title = "Jello";
 
@@ -30,12 +31,15 @@ MeshData mesh_data;
 
 GLuint background_vao = -1;
 GLuint background_vbo = -1;
-const glm::vec3 background_vertices[4] =
+const glm::vec3 background_vertices[6] =
 {
-    glm::vec3(1.0f, 1.0f, 1.0f),
-    glm::vec3(1.0f, 0.0f, 1.0f),
     glm::vec3(0.0f, 0.0f, 1.0f),
-    glm::vec3(0.0f, 1.0f, 1.0f)
+    glm::vec3(0.0f, 1.0f, 1.0f),
+    glm::vec3(1.0f, 1.0f, 1.0f),
+
+    glm::vec3(1.0f, 1.0f, 1.0f),
+    glm::vec3(0.0f, 1.0f, 1.0f),
+    glm::vec3(0.0f, 0.0f, 1.0f)
 };
 
 struct CameraUniforms {
@@ -241,7 +245,7 @@ void reload_shader()
 //This function gets called when a key is pressed
 void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    std::cout << "key : " << key << ", " << char(key) << ", scancode: " << scancode << ", action: " << action << ", mods: " << mods << std::endl;
+    //std::cout << "key : " << key << ", " << char(key) << ", scancode: " << scancode << ", action: " << action << ", mods: " << mods << std::endl;
 
     if (action == GLFW_PRESS)
     {
@@ -282,6 +286,10 @@ void resize(GLFWwindow* window, int width, int height)
 void initOpenGL()
 {
     glewInit();
+
+#ifdef _DEBUG
+    RegisterCallback();
+#endif
 
     //Print out information about the OpenGL version supported by the graphics driver.	
     std::cout << "Vendor: " << glGetString(GL_VENDOR) << std::endl;
@@ -337,6 +345,10 @@ int main(int argc, char** argv)
     {
         return -1;
     }
+
+#ifdef _DEBUG
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+#endif
 
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(CameraData.resolution.x, CameraData.resolution.y, window_title, NULL, NULL);
