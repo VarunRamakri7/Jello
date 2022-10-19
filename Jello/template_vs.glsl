@@ -28,13 +28,13 @@ out vec3 light_dir;
 
 void main(void)
 {
+	// Assign position depending on pass
 	position = (pass == 0) ? pos_attrib : vec3(M * vec4(pos_attrib, 1.0)); // World-space vertex position
 	tex_coord = tex_coord_attrib; //send tex_coord to fragment shader
 	
 	eye_dir = -1.0 * normalize(vec3(M * vec4(pos_attrib, 1.0)));
 	light_dir = normalize(Light.light_w).xyz;
 
-	// Assign position depending on pass
 	normal = normalize(M * vec4(normal_attrib, 0.0)).xyz;
 
 	gl_Position = (pass == 0) ? vec4(position, 1.0) : PV * vec4(position, 1.0);
