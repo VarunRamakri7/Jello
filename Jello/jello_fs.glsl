@@ -1,6 +1,7 @@
 #version 440
 
 layout(location = 2) uniform float time;
+layout(location = 3) uniform int pass;
 
 layout(std140, binding = 0) uniform LightUniforms {
    vec4 light_w; // world-space light position
@@ -19,7 +20,6 @@ layout(std140, binding = 2) uniform CameraUniforms {
     float aspect;
 } Camera;
 
-
 in vec2 tex_coord;
 in vec3 position;
 in vec3 normal;
@@ -28,18 +28,29 @@ in vec3 light_dir;
 
 out vec4 fragcolor; //the output color for this fragment    
 
-void main(void)
-{   
-    vec4 color;
-
+vec4 HackTransparency()
+{
     vec3 reflect_dir = -reflect(light_dir, normal);
 
     float spec = max(dot(eye_dir, reflect_dir), 0.0);
     spec *= spec;
 
-    color = Material.base_color + Material.spec_factor * spec * Material.spec_color;
+    return (Material.base_color + Material.spec_factor * spec * Material.spec_color);
+}
 
-    fragcolor = min(color, vec4(1.0));
+void main(void)
+{
+    fragcolor = min(HackTransparency(), vec4(1.0));
+
+    /*switch(pass)
+    {
+        case 0: // Render Background
+            break;
+        case 1: // Render mesh back faces and store eye-space depth
+            break;
+        case 2: // Render front faces, compute eye-space depth
+            break;
+    }*/
 
 	//fragcolor = vec4(normal, 1.0f); // Color as normals
 }

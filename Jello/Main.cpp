@@ -51,6 +51,7 @@ namespace UniformLocs
     int M = 0;
     int PV = 1;
     int time = 2;
+    int pass = 3;
 }
 
 GLuint light_ubo = -1;
@@ -63,6 +64,13 @@ namespace UboBinding
     int material = 1;
     int camera = 2;
 }
+
+enum PASS
+{
+    BACKGROUND, // Render background
+    BACK_FACES, // Render mesh back faces and store eye-space depth
+    FRONT_FACES // Render front faces, compute eye-space depth
+};
 
 float angle = 0.75f;
 float scale = 0.5f;
@@ -262,8 +270,10 @@ void initOpenGL()
     std::cout << "Version: " << glGetString(GL_VERSION) << std::endl;
     std::cout << "GLSL Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
     //glEnable(GL_DEPTH_TEST);
+    //glDepthMask(GL_FALSE);
     glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_SRC_COLOR);
+    //glBlendFunc(GL_ONE, GL_SRC_COLOR);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // for MaterialUniforms
     glGenBuffers(1, &material_ubo);
