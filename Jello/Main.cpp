@@ -32,10 +32,10 @@ GLuint background_vao = -1;
 GLuint background_vbo = -1;
 const glm::vec3 background_vertices[4] =
 {
-    glm::vec3(1.0f, 1.0f, 0.0f),
-    glm::vec3(1.0f, 0.0f, 0.0f),
-    glm::vec3(0.0f, 0.0f, 0.0f),
-    glm::vec3(0.0f, 1.0f, 0.0f)
+    glm::vec3(1.0f, 1.0f, 1.0f),
+    glm::vec3(1.0f, 0.0f, 1.0f),
+    glm::vec3(0.0f, 0.0f, 1.0f),
+    glm::vec3(0.0f, 1.0f, 1.0f)
 };
 
 struct CameraUniforms {
