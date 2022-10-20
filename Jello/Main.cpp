@@ -25,6 +25,9 @@ static const std::string vertex_shader("template_vs.glsl");
 static const std::string fragment_shader("jello_fs.glsl");
 GLuint shader_program = -1;
 
+GLuint FBO; // Frame buffer object
+GLuint depthTex; // Depth texture
+
 static const std::string mesh_name = "RubiksCube_01.obj";
 
 MeshData mesh_data;
@@ -32,16 +35,13 @@ MeshData mesh_data;
 GLuint bg_vao = -1;
 GLuint bg_vbo = -1;
 GLuint bg_ebo = -1;
-const glm::vec3 bg_vertices[4] =
-{
+const glm::vec3 bg_vertices[4] = {
     glm::vec3(1.0f, 1.0f, 1.0f), // Top right
     glm::vec3(1.0f, -1.0f, 1.0f), // Bottom right
     glm::vec3(-1.0f, -1.0f, 1.0f), // Bottom left
     glm::vec3(-1.0f, 1.0f, 1.0f) // Top Left
 };
-
-const int bg_indices[6] =
-{
+const int bg_indices[6] = {
     0, 1, 3, // First triangle
     1, 2, 3 // Second triangle
 };
@@ -55,6 +55,7 @@ struct CameraUniforms {
 
 struct LightUniforms {
     glm::vec4 light_w = glm::vec4(-10.0f, 10.0f, 5.0f, 1.0f); // World-space light position
+    glm::vec4 bg_color = glm::vec4(0.35f, 0.35f, 0.35f, 1.0f); // Background color
 } LightData;
 
 struct MaterialUniforms {
@@ -63,7 +64,7 @@ struct MaterialUniforms {
     float spec_factor = 2.0f; // Specular factor
 } MaterialData;
 
-//Locations for the uniforms which are not in uniform blocks
+// Locations for the uniforms which are not in uniform blocks
 namespace UniformLocs
 {
     int M = 0;
@@ -75,7 +76,6 @@ namespace UniformLocs
 GLuint light_ubo = -1;
 GLuint material_ubo = -1;
 GLuint camera_ubo = -1;
-
 namespace UboBinding
 {
     int light = 0;
@@ -154,6 +154,7 @@ void draw_gui(GLFWwindow* window)
    ImGui::ColorEdit3("Base Color", &MaterialData.base_color.r, 0);
    ImGui::ColorEdit3("Specular Color", &MaterialData.spec_color.r, 0);
    ImGui::SliderFloat("Specular Factor", &MaterialData.spec_factor, 1.0f, 10.0f);
+   ImGui::ColorEdit3("Background Color", &LightData.bg_color.r, 0);
 
    ImGui::End();
 
@@ -305,6 +306,26 @@ void initOpenGL()
     glEnable(GL_BLEND);
     //glBlendFunc(GL_ONE, GL_SRC_COLOR);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // For FBO
+    //glGenFramebuffers(1, &FBO);
+    //glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
+    // For depth texture
+    //glGenTextures(1, &depthTex);
+    //glBindTexture(GL_TEXTURE_2D, depthTex);
+    //
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, CameraData.resolution.x, CameraData.resolution.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    //
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    //
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+    //
+    //glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTex, 0);
 
     // for MaterialUniforms
     glGenBuffers(1, &material_ubo);

@@ -6,7 +6,8 @@ layout(location = 2) uniform float time;
 layout(location = 3) uniform int pass;
 
 layout(std140, binding = 0) uniform LightUniforms {
-   vec4 light_w; // world-space light position
+	vec4 light_w; // world-space light position
+	vec4 bg_color; // Background color
 } Light;
 
 layout(std140, binding = 2) uniform CameraUniforms {
