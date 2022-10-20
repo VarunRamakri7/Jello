@@ -43,7 +43,7 @@ void main(void)
     switch(pass)
     {
         case 0: // Render Background
-            fragcolor = vec4(0.9f, 0.45f, 0.25f, 1.0f);
+            fragcolor = vec4(0.35f, 0.35f, 0.35f, 0.0f);
             break;
         case 1: // Render mesh back faces and store eye-space depth
             break;

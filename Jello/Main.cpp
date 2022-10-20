@@ -29,17 +29,21 @@ static const std::string mesh_name = "RubiksCube_01.obj";
 
 MeshData mesh_data;
 
-GLuint background_vao = -1;
-GLuint background_vbo = -1;
-const glm::vec3 background_vertices[6] =
+GLuint bg_vao = -1;
+GLuint bg_vbo = -1;
+GLuint bg_ebo = -1;
+const glm::vec3 bg_vertices[4] =
 {
-    glm::vec3(-1.0f, -1.0f, 1.0f),
-    glm::vec3(1.0f, -1.0f, 1.0f),
-    glm::vec3(1.0f, 1.0f, 1.0f),
+    glm::vec3(1.0f, 1.0f, 1.0f), // Top right
+    glm::vec3(1.0f, -1.0f, 1.0f), // Bottom right
+    glm::vec3(-1.0f, -1.0f, 1.0f), // Bottom left
+    glm::vec3(-1.0f, 1.0f, 1.0f) // Top Left
+};
 
-    glm::vec3(1.0f, 1.0f, 1.0f),
-    glm::vec3(-1.0f, 1.0f, 1.0f),
-    glm::vec3(-1.0f, -1.0f, 1.0f)
+const int bg_indices[6] =
+{
+    0, 1, 3, // First triangle
+    1, 2, 3 // Second triangle
 };
 
 struct CameraUniforms {
@@ -187,8 +191,8 @@ void display(GLFWwindow* window)
 
     // Draw background
     glUniform1i(UniformLocs::pass, BACKGROUND);
-    glBindVertexArray(background_vao);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glBindVertexArray(bg_vao);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
     // Draw cube
     glUniform1i(UniformLocs::pass, DEFAULT);
@@ -321,15 +325,22 @@ void initOpenGL()
     glBindBufferBase(GL_UNIFORM_BUFFER, UboBinding::camera, camera_ubo);
 
     // For background
-    glGenVertexArrays(1, &background_vao);
-    glGenBuffers(1, &background_vbo);
-    glBindVertexArray(background_vao);
+    glGenVertexArrays(1, &bg_vao);
+    glGenBuffers(1, &bg_vbo);
+    glGenBuffers(1, &bg_ebo);
+    glBindVertexArray(bg_vao);
 
-    glBindBuffer(GL_ARRAY_BUFFER, background_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(background_vertices), background_vertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, bg_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(bg_vertices), bg_vertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bg_ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(bg_indices), bg_indices, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
     glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
 
     reload_shader();
 
