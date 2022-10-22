@@ -3,7 +3,7 @@
 layout(location = 2) uniform float time;
 layout(location = 3) uniform int pass;
 
-//layout(location = 4) uniform sampler2D depthTex;
+layout(location = 4) uniform sampler2D depthTex;
 
 layout(std140, binding = 0) uniform LightUniforms {
     vec4 light_w; // world-space light position
@@ -29,7 +29,8 @@ in vec3 normal;
 in vec3 eye_dir;
 in vec3 light_dir;
 
-out vec4 fragcolor; //the output color for this fragment    
+out layout(location = 0) vec4 fragcolor; //the output color for this fragment    
+out layout(location = 1) vec3 depth; // Write depth to FBO attachment at 0
 
 vec4 HackTransparency()
 {
@@ -51,22 +52,33 @@ void main(void)
         case 1: // Render mesh back faces and store eye-space depth
             if(!gl_FrontFacing)
             {
-                
+                // Store eye-space depth
+            }
+            else
+            {
+                discard; // Discard front facing fragments
             }
             break;
         case 2: // Render front faces, compute eye-space depth
             if(gl_FrontFacing)
             {
-                
+                // Compute eye-space depth
+
+                // Compute thickness
+
+                // Get refracted background color
+
+                // Compute Beer's Law for final color
+            }
+            else
+            {
+                discard; // Discard back facing fragments
             }
             break;
         default:
             fragcolor = min(HackTransparency(), vec4(1.0));
             break;
     }
-
-    //vec2 res = gl_FragCoord.xy / vec2(Camera.resolution.xy);
-    //fragcolor = texture(depthTex, res);
 
 	//fragcolor = vec4(normal, 1.0f); // Color as normals
 }

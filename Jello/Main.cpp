@@ -166,13 +166,11 @@ void draw_gui(GLFWwindow* window)
 // This function gets called every time the scene gets redisplayed
 void display(GLFWwindow* window)
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+    //glViewport(0, 0, 256, 256); // Change viewport to texture size
+    //glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+    //glDrawBuffer(GL_COLOR_ATTACHMENT0); // Draw into color attachment
 
-    //Clear the screen to the color previously specified in the glClearColor(...) call.
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glEnable(GL_DEPTH_TEST);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
 
     glm::mat4 M = glm::rotate(angle, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::vec3(scale * mesh_data.mScaleFactor));
     glm::mat4 V = glm::lookAt(CameraData.eye, glm::vec3(0.0f), CameraData.up);
@@ -195,20 +193,35 @@ void display(GLFWwindow* window)
     glBindBuffer(GL_UNIFORM_BUFFER, camera_ubo); //Bind the OpenGL UBO before we update the data.
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUniforms), &CameraData); //Upload the new uniform values.
 
-    glDisable(GL_DEPTH_TEST);
-    glBindTexture(GL_TEXTURE_2D, depthTex);
-
     // Draw background
     glUniform1i(UniformLocs::pass, BACKGROUND);
     glBindVertexArray(bg_vao);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
+    //glEnable(GL_DEPTH_TEST);
+
+    //glDrawBuffer(GL_DEPTH_ATTACHMENT); // Draw to depth attachment
+
     // Draw cube
+    glBindTexture(GL_TEXTURE_2D, depthTex); // Bind depth texture
     glUniform1i(UniformLocs::pass, DEFAULT);
     glBindVertexArray(mesh_data.mVao);
     glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
 
+    /*
+    // Draw back faces
+    glUniform1i(UniformLocs::pass, BACK_FACES);
+    glBindVertexArray(mesh_data.mVao);
+    glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
+
+    // Draw front faces
+    glUniform1i(UniformLocs::pass, FRONT_FACES);
+    glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
+    */
+
     glBindVertexArray(0);
+    //glBindFramebuffer(GL_FRAMEBUFFER, 0); // Unbind FBO
+    //glViewport(0, 0, CameraData.resolution.x, CameraData.resolution.y);
 
     draw_gui(window);
 
@@ -315,6 +328,7 @@ void initOpenGL()
     //glBlendFunc(GL_ONE, GL_SRC_COLOR);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    /*
     // For FBO
     glGenFramebuffers(1, &FBO);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
@@ -322,8 +336,7 @@ void initOpenGL()
     // For depth texture
     glGenTextures(1, &depthTex);
     glBindTexture(GL_TEXTURE_2D, depthTex);
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, CameraData.resolution.x, CameraData.resolution.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, 256,256, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -333,13 +346,15 @@ void initOpenGL()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
     
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTex, 0); // Add attachment to FBO
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, depthTex, 0); // Add attachment to FBO
+
     
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
     }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0); // Unbind framebuffer
+    */
 
     // for MaterialUniforms
     glGenBuffers(1, &material_ubo);
