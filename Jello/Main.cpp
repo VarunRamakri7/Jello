@@ -30,6 +30,7 @@ const char* const window_title = "Jello";
 static const std::string vertex_shader("template_vs.glsl");
 static const std::string fragment_shader("template_fs.glsl");
 GLuint shader_program = -1;
+float time_sec;
 
 static const std::string mesh_name = "Amago0.obj";
 static const std::string texture_name = "AmagoT.bmp";
@@ -206,7 +207,7 @@ void display(GLFWwindow* window)
 
 void idle()
 {
-   float time_sec = static_cast<float>(glfwGetTime());
+   time_sec = static_cast<float>(glfwGetTime());
 
    //Pass time_sec value to the shaders
    int time_loc = glGetUniformLocation(shader_program, "time");
@@ -318,7 +319,7 @@ int main(int argc, char **argv)
 
    initOpenGL();
    myCube = new Cube(8);
-   myCube->setSpringMode(true, false, false);
+   myCube->setSpringMode(true, true, true);
    
    //Init ImGui
    IMGUI_CHECKVERSION();
@@ -330,6 +331,7 @@ int main(int argc, char **argv)
    while (!glfwWindowShouldClose(window))
    {
       idle();
+      myCube->updatePoints(time_sec);
       display(window);
 
       /* Poll for and process events */

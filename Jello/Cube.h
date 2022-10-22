@@ -7,6 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/norm.hpp>
 
 #include <vector>
 
@@ -20,7 +21,7 @@ class Cube {
         void getSurface();
         glm::mat4 getModelMatrix();
         void setSpringMode(bool structural, bool shear, bool bend);
-        void updatePoints();
+        void updatePoints(float time);
 
     private:
         int resolution = 8;
@@ -33,7 +34,7 @@ class Cube {
         glm::mat4 modelMatrix = glm::mat4(1.0f);
         void fillDiscretePoints(bool structural, bool shear, bool bend);
         //MassPoint**** massPointMap; // dynamic array of pointers 
-        std::vector <MassPoint> discretePoints{};
+        std::vector <MassPoint*> discretePoints{};
         //std::vector <MassPoint> surfacePoints{};
 
         // unit cube (m)
@@ -41,6 +42,12 @@ class Cube {
             glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec3(0.5f, -0.5f, 0.5f),
             glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(0.5f, 0.5f, -0.5f), glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec3(0.5f, 0.5f, 0.5f),
         };
+
+        //physics
+        double stiffness = -50;
+        double damping = -0.5;
+        double mass = 1.0;
+        double timeStep = 0.01;
 };
 
 
