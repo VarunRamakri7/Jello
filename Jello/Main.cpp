@@ -26,7 +26,11 @@ static const std::string fragment_shader("jello_fs.glsl");
 GLuint shader_program = -1;
 
 GLuint FBO; // Frame buffer object
-GLuint depthTex; // Depth texture
+GLuint RBO; // RenderBuffer object
+GLuint fboTexture; // Color texture
+
+GLuint rectVAO;
+GLuint rectVBO;
 
 static const std::string mesh_name = "RubiksCube_01.obj";
 
@@ -34,16 +38,16 @@ MeshData mesh_data;
 
 GLuint bg_vao = -1;
 GLuint bg_vbo = -1;
-GLuint bg_ebo = -1;
-const glm::vec3 bg_vertices[4] = {
-    glm::vec3(1.0f, 1.0f, 1.0f), // Top right
-    glm::vec3(1.0f, -1.0f, 1.0f), // Bottom right
-    glm::vec3(-1.0f, -1.0f, 1.0f), // Bottom left
-    glm::vec3(-1.0f, 1.0f, 1.0f) // Top Left
-};
-const int bg_indices[6] = {
-    0, 1, 3, // First triangle
-    1, 2, 3 // Second triangle
+float bg_vertices[] =
+{
+    // Coords       // Tex coords
+    1.0f, -1.0f,    1.0f, 0.0f,
+    -1.0f, -1.0f,   0.0f, 0.0f,
+    -1.0f, 1.0f,    0.0f, 1.0f,
+
+    1.0f, 1.0f,     1.0f, 1.0f,
+    1.0f, -1.0f,    1.0f, 0.0f,
+    -1.0f, 1.0f,    0.0f, 1.0f
 };
 
 struct CameraUniforms {
@@ -146,7 +150,6 @@ void draw_gui(GLFWwindow* window)
 
    ImGui::End();
 
-
    ImGui::Begin("Shading");
 
    ImGui::SliderFloat3("Light Position", &LightData.light_w.x, -10.0f, 10.0f);
@@ -166,11 +169,10 @@ void draw_gui(GLFWwindow* window)
 // This function gets called every time the scene gets redisplayed
 void display(GLFWwindow* window)
 {
-    //glViewport(0, 0, 256, 256); // Change viewport to texture size
     //glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-    //glDrawBuffer(GL_COLOR_ATTACHMENT0); // Draw into color attachment
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //glEnable(GL_DEPTH_TEST);
 
     glm::mat4 M = glm::rotate(angle, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::vec3(scale * mesh_data.mScaleFactor));
     glm::mat4 V = glm::lookAt(CameraData.eye, glm::vec3(0.0f), CameraData.up);
@@ -181,7 +183,7 @@ void display(GLFWwindow* window)
     // Get location for shader uniform variable
     glm::mat4 PV = P * V;
     glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
-
+        
     glUniformMatrix4fv(UniformLocs::M, 1, false, glm::value_ptr(M));
 
     glBindBuffer(GL_UNIFORM_BUFFER, material_ubo); //Bind the OpenGL UBO before we update the data.
@@ -196,32 +198,12 @@ void display(GLFWwindow* window)
     // Draw background
     glUniform1i(UniformLocs::pass, BACKGROUND);
     glBindVertexArray(bg_vao);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-    //glEnable(GL_DEPTH_TEST);
-
-    //glDrawBuffer(GL_DEPTH_ATTACHMENT); // Draw to depth attachment
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 
     // Draw cube
-    glBindTexture(GL_TEXTURE_2D, depthTex); // Bind depth texture
     glUniform1i(UniformLocs::pass, DEFAULT);
     glBindVertexArray(mesh_data.mVao);
     glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
-
-    /*
-    // Draw back faces
-    glUniform1i(UniformLocs::pass, BACK_FACES);
-    glBindVertexArray(mesh_data.mVao);
-    glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
-
-    // Draw front faces
-    glUniform1i(UniformLocs::pass, FRONT_FACES);
-    glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
-    */
-
-    glBindVertexArray(0);
-    //glBindFramebuffer(GL_FRAMEBUFFER, 0); // Unbind FBO
-    //glViewport(0, 0, CameraData.resolution.x, CameraData.resolution.y);
 
     draw_gui(window);
 
@@ -333,22 +315,22 @@ void initOpenGL()
     glGenFramebuffers(1, &FBO);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
-    // For depth texture
-    glGenTextures(1, &depthTex);
-    glBindTexture(GL_TEXTURE_2D, depthTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, 256,256, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-    
+    // For Color Attachment
+    glGenTextures(1, &fboTexture);
+    glBindTexture(GL_TEXTURE_2D, fboTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, CameraData.resolution.x, CameraData.resolution.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-    
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, depthTex, 0); // Add attachment to FBO
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboTexture, 0); // Add color attachment to FBO
 
-    
+    // For RBO
+    glGenRenderbuffers(1, &RBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, CameraData.resolution.x, CameraData.resolution.y);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
@@ -377,22 +359,20 @@ void initOpenGL()
     // For background
     glGenVertexArrays(1, &bg_vao);
     glGenBuffers(1, &bg_vbo);
-    glGenBuffers(1, &bg_ebo);
     glBindVertexArray(bg_vao);
 
     glBindBuffer(GL_ARRAY_BUFFER, bg_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(bg_vertices), bg_vertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bg_ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(bg_indices), bg_indices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
     glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
     reload_shader();
+    glUniform1i(glGetUniformLocation(shader_program, "fboTex"), 0);
 
     mesh_data = LoadMesh(mesh_name);
 }
