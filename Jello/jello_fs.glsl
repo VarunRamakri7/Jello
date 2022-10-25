@@ -3,7 +3,7 @@
 layout(location = 2) uniform float time;
 layout(location = 3) uniform int pass;
 
-layout(location = 4) uniform sampler2D depthTex;
+uniform sampler2D fboTex;
 
 layout(std140, binding = 0) uniform LightUniforms {
     vec4 light_w; // world-space light position
@@ -28,9 +28,10 @@ in vec3 position;
 in vec3 normal;
 in vec3 eye_dir;
 in vec3 light_dir;
+in float depth;
 
 out layout(location = 0) vec4 fragcolor; //the output color for this fragment    
-out layout(location = 1) vec3 depth; // Write depth to FBO attachment at 0
+out layout(location = 1) vec3 depthBuf; // Write depth to FBO attachment at 0
 
 vec4 HackTransparency()
 {
@@ -53,6 +54,7 @@ void main(void)
             if(!gl_FrontFacing)
             {
                 // Store eye-space depth
+                //depthBuf = depth.x / 
             }
             else
             {
@@ -62,7 +64,7 @@ void main(void)
         case 2: // Render front faces, compute eye-space depth
             if(gl_FrontFacing)
             {
-                // Compute eye-space depth
+                // Compute front face depth
 
                 // Compute thickness
 
