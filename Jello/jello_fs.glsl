@@ -23,21 +23,24 @@ layout(std140, binding = 2) uniform CameraUniforms {
     float aspect;
 } Camera;
 
-in vec2 tex_coord;
-in vec3 position;
-in vec3 normal;
-in vec3 eye_dir;
-in vec3 light_dir;
-in float depth;
+in VertexData
+{
+	vec2 tex_coord;
+	vec3 normal;
+	vec3 position;
+	vec3 eye_dir;
+	vec3 light_dir;
+	float depth;
+} inData;
 
 out layout(location = 0) vec4 fragcolor; //the output color for this fragment    
 out layout(location = 1) float depthVal; // Write depth to Color attachment 1
 
 vec4 HackTransparency()
 {
-    vec3 reflect_dir = -reflect(light_dir, normal);
+    vec3 reflect_dir = -reflect(inData.light_dir, inData.normal);
 
-    float spec = max(dot(eye_dir, reflect_dir), 0.0);
+    float spec = max(dot(inData.eye_dir, reflect_dir), 0.0);
     spec *= spec;
 
     return (Material.base_color + Material.spec_factor * spec * Material.spec_color) * Light.bg_color;
@@ -54,7 +57,7 @@ void main(void)
             if(!gl_FrontFacing)
             {
                 // Store eye-space depth
-                depthVal = depth;
+                depthVal = inData.depth;
             }
             else
             {

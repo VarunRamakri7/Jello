@@ -23,28 +23,36 @@ in vec3 pos_attrib; // This variable holds the position of vertices
 in vec2 tex_coord_attrib;
 in vec3 normal_attrib;  
 
-out vec2 tex_coord;
-out vec3 normal;
-out vec3 position;
-out vec3 eye_dir;
-out vec3 light_dir;
-out float depth;
+out VertexData
+{
+	vec2 tex_coord;
+	vec3 normal;
+	vec3 position;
+	vec3 eye_dir;
+	vec3 light_dir;
+	float depth;
+} outData;
 
 const float near = 0.1f;
 const float far = 100.0f;
 
+const vec4 quad[4] = vec4[] (vec4(-1.0, 1.0, 0.0, 1.0), 
+										vec4(-1.0, -1.0, 0.0, 1.0), 
+										vec4( 1.0, 1.0, 0.0, 1.0), 
+										vec4( 1.0, -1.0, 0.0, 1.0) );
+
 void main(void)
 {
 	// Assign position depending on pass
-	position = (pass == 0) ? pos_attrib : vec3(M * vec4(pos_attrib, 1.0)); // World-space vertex position
-	tex_coord = tex_coord_attrib; // Send tex_coord to fragment shader
+	outData.position = (pass == 0) ? pos_attrib : vec3(M * vec4(pos_attrib, 1.0)); // World-space vertex position
+	outData.tex_coord = tex_coord_attrib; // Send tex_coord to fragment shader
 	
-	eye_dir = -1.0 * normalize(vec3(M * vec4(pos_attrib, 1.0)));
-	light_dir = normalize(Light.light_w).xyz;
+	outData.eye_dir = -1.0 * normalize(vec3(M * vec4(pos_attrib, 1.0)));
+	outData.light_dir = normalize(Light.light_w).xyz;
 
-	normal = normalize(M * vec4(normal_attrib, 0.0)).xyz;
+	outData.normal = normalize(M * vec4(normal_attrib, 0.0)).xyz;
 
-	depth =  (pass == 0) ? 1.0f : (PV * vec4(pos_attrib, 1.0)).z; // Send eye-space depth
+	outData.depth =  (pass == 0) ? 1.0f : (PV * vec4(pos_attrib, 1.0)).z; // Send eye-space depth
 
-	gl_Position = (pass == 0) ? vec4(position, 1.0) : PV * vec4(position, 1.0);
+	gl_Position = (pass == 0) ? vec4(outData.position, 1.0) : PV * vec4(outData.position, 1.0);
 }

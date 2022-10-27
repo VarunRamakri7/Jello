@@ -29,8 +29,8 @@ static const std::string fragment_shader("jello_fs.glsl");
 GLuint shader_program = -1;
 
 GLuint FBO; // Frame buffer object
-GLuint fbo_tex; // Color FBO texture
-GLuint depth_tex; // Depth FBO texture
+GLuint fbo_tex = -1; // Color FBO texture
+GLuint depth_tex = -1; // Depth FBO texture
 GLenum buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 
 GLuint attribless_vao = -1;
@@ -206,7 +206,6 @@ void DrawScene()
     glUniform1i(UniformLocs::pass, BACKGROUND);
     
     glViewport(0, 0, screen_width, screen_height); // Change viewport size
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear FBO texture
 
     // Clear texture
@@ -224,7 +223,7 @@ void DrawScene()
 
     // Pass 2: Draw cube front faces
     glUniform1i(UniformLocs::pass, FRONT_FACES);
-    glBindVertexArray(mesh_data.mVao);
+    //glBindVertexArray(mesh_data.mVao);
     glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
 
     // Render textured quad to back buffer
@@ -379,9 +378,7 @@ void initOpenGL()
     std::cout << "Version: " << glGetString(GL_VERSION) << std::endl;
     std::cout << "GLSL Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
     glEnable(GL_DEPTH_TEST);
-    //glDepthMask(GL_FALSE);
     glEnable(GL_BLEND);
-    //glBlendFunc(GL_ONE, GL_SRC_COLOR);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     reload_shader();
@@ -419,6 +416,10 @@ void initOpenGL()
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+    }
+    else
+    {
+        std::cout << "Framebuffer complete!" << std::endl;
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // Unbind framebuffer
 
