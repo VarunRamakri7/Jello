@@ -18,16 +18,22 @@
 #include "LoadTexture.h"   //Functions for creating OpenGL textures from image files
 #include "VideoMux.h"      //Functions for saving videos
 #include "DebugCallback.h" // Functions for debugging glsl
+#include "AttriblessRendering.h"
 
 const char* const window_title = "Jello";
 
+int screen_width;
+int screen_height;
 static const std::string vertex_shader("template_vs.glsl");
 static const std::string fragment_shader("jello_fs.glsl");
 GLuint shader_program = -1;
 
 GLuint FBO; // Frame buffer object
-GLuint fboTexture; // Default FBO texture
-GLuint depthTexture; // Default FBO texture
+GLuint fbo_tex; // Color FBO texture
+GLuint depth_tex; // Depth FBO texture
+GLenum buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+
+GLuint attribless_vao = -1;
 
 GLuint rectVAO;
 GLuint rectVBO;
@@ -148,6 +154,10 @@ void draw_gui(GLFWwindow* window)
 
    ImGui::SliderFloat3("Camera Eye", &CameraData.eye.x, -10.0f, 10.0f);
 
+   //Show fbo_tex for debugging purposes. This is highly recommended for multipass rendering.
+   ImGui::Image((void*)fbo_tex, ImVec2(128.0f, 128.0f), ImVec2(0.0, 1.0), ImVec2(1.0, 0.0)); ImGui::SameLine();
+   ImGui::Image((void*)depth_tex, ImVec2(128.0f, 128.0f), ImVec2(0.0, 1.0), ImVec2(1.0, 0.0)); // Show depth texture
+   
    ImGui::End();
 
    ImGui::Begin("Shading");
@@ -166,13 +176,74 @@ void draw_gui(GLFWwindow* window)
    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
+/// <summary>
+/// Draw hack transperancy scene
+/// </summary>
+void DrawHackScene()
+{
+    glDisable(GL_DEPTH_TEST);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Draw background
+    glUniform1i(UniformLocs::pass, BACKGROUND);
+    glBindVertexArray(bg_vao);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    // Draw cube
+    glUniform1i(UniformLocs::pass, DEFAULT);
+    glBindVertexArray(mesh_data.mVao);
+    glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
+}
+
+/// <summary>
+/// Draw actual scene
+/// </summary>
+void DrawScene()
+{
+    glDrawBuffers(2, buffers); // Draw to color attachment 0 and 1
+
+    // Pass 0: Draw background
+    glUniform1i(UniformLocs::pass, BACKGROUND);
+    
+    glViewport(0, 0, screen_width, screen_height); // Change viewport size
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear FBO texture
+
+    // Clear texture
+    float clear[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    glClearBufferfv(GL_COLOR, 1, clear);
+    
+    // Draw background quad
+    glBindVertexArray(bg_vao);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    // Pass 1: Draw cube back faces and store eye-space depth
+    glUniform1i(UniformLocs::pass, BACK_FACES);
+    glBindVertexArray(mesh_data.mVao);
+    glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
+
+    // Pass 2: Draw cube front faces
+    glUniform1i(UniformLocs::pass, FRONT_FACES);
+    glBindVertexArray(mesh_data.mVao);
+    glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
+
+    // Render textured quad to back buffer
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDrawBuffer(GL_BACK);
+
+    glBindTextureUnit(1, fbo_tex);
+    glBindTextureUnit(2, depth_tex);
+
+    glViewport(0, 0, screen_width, screen_height);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glBindVertexArray(attribless_vao);
+    draw_attribless_quad();
+}
+
 // This function gets called every time the scene gets redisplayed
 void display(GLFWwindow* window)
 {
-    //glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    //glEnable(GL_DEPTH_TEST);
-
     glm::mat4 M = glm::rotate(angle, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::vec3(scale * mesh_data.mScaleFactor));
     glm::mat4 V = glm::lookAt(CameraData.eye, glm::vec3(0.0f), CameraData.up);
     glm::mat4 P = glm::perspective(glm::pi<float>() / 4.0f, CameraData.aspect, 0.1f, 100.0f);
@@ -194,37 +265,8 @@ void display(GLFWwindow* window)
     glBindBuffer(GL_UNIFORM_BUFFER, camera_ubo); //Bind the OpenGL UBO before we update the data.
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUniforms), &CameraData); //Upload the new uniform values.
 
-    // Draw background
-    //glDrawBuffer(GL_COLOR_ATTACHMENT0); // Draw to Color Attachment 0
-    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUniform1i(UniformLocs::pass, BACKGROUND);
-    glBindVertexArray(bg_vao);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    // Draw cube
-    glUniform1i(UniformLocs::pass, DEFAULT);
-    glBindVertexArray(mesh_data.mVao);
-    glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
-
-    /*
-    // Draw back faces and store eye-space depth
-    glDrawBuffer(GL_COLOR_ATTACHMENT1); // Draw to Color Attachment 1
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUniform1i(UniformLocs::pass, BACK_FACES);
-    glBindVertexArray(mesh_data.mVao);
-    glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
-
-    // Draw front faces
-    glUniform1i(UniformLocs::pass, FRONT_FACES);
-    glBindVertexArray(mesh_data.mVao);
-    glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0); // Unbind FBO
-    glDrawBuffer(GL_BACK);
-    glViewport(0, 0, CameraData.resolution.x, CameraData.resolution.y);
-    */
-
-    draw_gui(window);
+    //DrawHackScene();
+    DrawScene();
 
     if (recording == true)
     {
@@ -235,6 +277,8 @@ void display(GLFWwindow* window)
         read_frame_to_encode(&rgb, &pixels, w, h);
         encode_frame(rgb);
     }
+
+    draw_gui(window);
 
     /* Swap front and back buffers */
     glfwSwapBuffers(window);
@@ -302,6 +346,17 @@ void mouse_button(GLFWwindow* window, int button, int action, int mods)
     //std::cout << "button : "<< button << ", action: " << action << ", mods: " << mods << std::endl;
 }
 
+/// <summary>
+/// Get the total screen size
+/// </summary>
+void GetScreenSize()
+{
+    // Get screen dimensions
+    const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    screen_width = mode->width;
+    screen_height = mode->height;
+}
+
 void resize(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height); // Set viewport to cover entire framebuffer
@@ -323,32 +378,43 @@ void initOpenGL()
     std::cout << "Renderer: " << glGetString(GL_RENDERER) << std::endl;
     std::cout << "Version: " << glGetString(GL_VERSION) << std::endl;
     std::cout << "GLSL Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
-    //glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
     //glDepthMask(GL_FALSE);
     glEnable(GL_BLEND);
     //glBlendFunc(GL_ONE, GL_SRC_COLOR);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // For FBO
-    glGenFramebuffers(1, &FBO);
-    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+    reload_shader();
+    mesh_data = LoadMesh(mesh_name);
+
+    glGenVertexArrays(1, &attribless_vao);
 
     // For Color Attachment
-    glGenTextures(1, &fboTexture);
-    glBindTexture(GL_TEXTURE_2D, fboTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, CameraData.resolution.x, CameraData.resolution.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glGenTextures(1, &fbo_tex);
+    glBindTexture(GL_TEXTURE_2D, fbo_tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, screen_width, screen_height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0); // Use screen size
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboTexture, 0); // Add color attachment 0 to FBO
 
-    glGenTextures(1, &depthTexture);
-    glBindTexture(GL_TEXTURE_2D, depthTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, CameraData.resolution.x, CameraData.resolution.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // Create depth texture
+    glGenTextures(1, &depth_tex);
+    glBindTexture(GL_TEXTURE_2D, depth_tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, screen_width, screen_height, 0, GL_RED, GL_FLOAT, 0); // Use screen size
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, fboTexture, 0); // Add color attachment 1 to FBO
+
+    //Create the framebuffer object
+    glGenFramebuffers(1, &FBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_tex, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, depth_tex, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
@@ -388,11 +454,6 @@ void initOpenGL()
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
-
-    reload_shader();
-    glUniform1i(glGetUniformLocation(shader_program, "fboTex"), 0);
-
-    mesh_data = LoadMesh(mesh_name);
 }
 
 int main(int argc, char** argv)
@@ -425,6 +486,8 @@ int main(int argc, char** argv)
 
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
+
+    GetScreenSize();
 
     initOpenGL();
 
