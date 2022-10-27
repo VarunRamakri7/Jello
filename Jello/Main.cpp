@@ -26,8 +26,8 @@ static const std::string fragment_shader("jello_fs.glsl");
 GLuint shader_program = -1;
 
 GLuint FBO; // Frame buffer object
-GLuint RBO; // RenderBuffer object
-GLuint fboTexture; // Color texture
+GLuint fboTexture; // Default FBO texture
+GLuint depthTexture; // Default FBO texture
 
 GLuint rectVAO;
 GLuint rectVBO;
@@ -170,7 +170,6 @@ void draw_gui(GLFWwindow* window)
 void display(GLFWwindow* window)
 {
     //glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     //glEnable(GL_DEPTH_TEST);
 
@@ -196,6 +195,8 @@ void display(GLFWwindow* window)
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUniforms), &CameraData); //Upload the new uniform values.
 
     // Draw background
+    //glDrawBuffer(GL_COLOR_ATTACHMENT0); // Draw to Color Attachment 0
+    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUniform1i(UniformLocs::pass, BACKGROUND);
     glBindVertexArray(bg_vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -204,6 +205,24 @@ void display(GLFWwindow* window)
     glUniform1i(UniformLocs::pass, DEFAULT);
     glBindVertexArray(mesh_data.mVao);
     glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
+
+    /*
+    // Draw back faces and store eye-space depth
+    glDrawBuffer(GL_COLOR_ATTACHMENT1); // Draw to Color Attachment 1
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glUniform1i(UniformLocs::pass, BACK_FACES);
+    glBindVertexArray(mesh_data.mVao);
+    glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
+
+    // Draw front faces
+    glUniform1i(UniformLocs::pass, FRONT_FACES);
+    glBindVertexArray(mesh_data.mVao);
+    glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0); // Unbind FBO
+    glDrawBuffer(GL_BACK);
+    glViewport(0, 0, CameraData.resolution.x, CameraData.resolution.y);
+    */
 
     draw_gui(window);
 
@@ -310,7 +329,6 @@ void initOpenGL()
     //glBlendFunc(GL_ONE, GL_SRC_COLOR);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    /*
     // For FBO
     glGenFramebuffers(1, &FBO);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
@@ -319,24 +337,24 @@ void initOpenGL()
     glGenTextures(1, &fboTexture);
     glBindTexture(GL_TEXTURE_2D, fboTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, CameraData.resolution.x, CameraData.resolution.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboTexture, 0); // Add color attachment to FBO
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboTexture, 0); // Add color attachment 0 to FBO
 
-    // For RBO
-    glGenRenderbuffers(1, &RBO);
-    glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, CameraData.resolution.x, CameraData.resolution.y);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+    glGenTextures(1, &depthTexture);
+    glBindTexture(GL_TEXTURE_2D, depthTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, CameraData.resolution.x, CameraData.resolution.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, fboTexture, 0); // Add color attachment 1 to FBO
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // Unbind framebuffer
-    */
 
     // for MaterialUniforms
     glGenBuffers(1, &material_ubo);
