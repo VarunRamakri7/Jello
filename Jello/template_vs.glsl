@@ -44,7 +44,7 @@ void main(void)
 
 	normal = normalize(M * vec4(normal_attrib, 0.0)).xyz;
 
-	//depth = PV * vec4(pos_attrib, 1.0).z; // Get eye-space depth
+	depth =  (pass == 0) ? 1.0f : (PV * vec4(pos_attrib, 1.0)).z; // Send eye-space depth
 
 	gl_Position = (pass == 0) ? vec4(position, 1.0) : PV * vec4(position, 1.0);
 }

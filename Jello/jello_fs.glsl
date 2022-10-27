@@ -31,7 +31,7 @@ in vec3 light_dir;
 in float depth;
 
 out layout(location = 0) vec4 fragcolor; //the output color for this fragment    
-out layout(location = 1) vec3 depthBuf; // Write depth to Color attachment 1
+out layout(location = 1) float depthVal; // Write depth to Color attachment 1
 
 vec4 HackTransparency()
 {
@@ -54,7 +54,7 @@ void main(void)
             if(!gl_FrontFacing)
             {
                 // Store eye-space depth
-                depthBuf = vec3(1.0f);
+                depthVal = depth;
             }
             else
             {
@@ -71,6 +71,8 @@ void main(void)
                 // Get refracted background color
 
                 // Compute Beer's Law for final color
+
+                fragcolor = min(HackTransparency(), vec4(1.0));
             }
             else
             {
