@@ -3,7 +3,8 @@
 layout(location = 2) uniform float time;
 layout(location = 3) uniform int pass;
 
-uniform sampler2D fboTex;
+layout(binding = 0) uniform sampler2D fbo_tex; 
+layout(binding = 1) uniform sampler2D depth_tex;
 
 layout(std140, binding = 0) uniform LightUniforms {
     vec4 light_w; // world-space light position

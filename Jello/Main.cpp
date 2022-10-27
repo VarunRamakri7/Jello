@@ -230,8 +230,8 @@ void DrawScene()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDrawBuffer(GL_BACK);
 
-    glBindTextureUnit(1, fbo_tex);
-    glBindTextureUnit(2, depth_tex);
+    glBindTextureUnit(0, fbo_tex);
+    glBindTextureUnit(1, depth_tex);
 
     glViewport(0, 0, screen_width, screen_height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
