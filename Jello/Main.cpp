@@ -32,6 +32,7 @@ GLuint FBO; // Frame buffer object
 GLuint fbo_tex = -1; // Color FBO texture
 GLuint depth_tex = -1; // Depth FBO texture
 GLenum buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+float clear[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 GLuint attribless_vao = -1;
 
@@ -200,6 +201,8 @@ void DrawHackScene()
 /// </summary>
 void DrawScene()
 {
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
     glDrawBuffers(2, buffers); // Draw to color attachment 0 and 1
 
     // Pass 0: Draw background
@@ -209,7 +212,6 @@ void DrawScene()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear FBO texture
 
     // Clear texture
-    float clear[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
     glClearBufferfv(GL_COLOR, 1, clear);
     
     // Draw background quad
@@ -228,7 +230,7 @@ void DrawScene()
 
     // Render textured quad to back buffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glDrawBuffer(GL_BACK);
+    //glDrawBuffer(GL_BACK);
 
     glBindTextureUnit(0, fbo_tex);
     glBindTextureUnit(1, depth_tex);
