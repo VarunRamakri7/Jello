@@ -99,7 +99,8 @@ enum PASS
     BACKGROUND, // Render background
     BACK_FACES, // Render mesh back faces and store eye-space depth
     FRONT_FACES, // Render front faces, compute eye-space depth
-    DEFAULT
+    DEFAULT,
+    QUAD
 };
 
 float angle = 0.75f;
@@ -225,19 +226,22 @@ void DrawScene()
 
     // Pass 2: Draw cube front faces
     glUniform1i(UniformLocs::pass, FRONT_FACES);
-    //glBindVertexArray(mesh_data.mVao);
     glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
 
     // Render textured quad to back buffer
+    glUniform1i(UniformLocs::pass, QUAD);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    //glDrawBuffer(GL_BACK);
+    glDrawBuffer(GL_BACK);
+
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear FBO texture
 
     glBindTextureUnit(0, fbo_tex);
     glBindTextureUnit(1, depth_tex);
 
-    glViewport(0, 0, screen_width, screen_height);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //glViewport(0, 0, screen_width, screen_height);
 
+    glDisable(GL_DEPTH_TEST);
     glBindVertexArray(attribless_vao);
     draw_attribless_quad();
 }

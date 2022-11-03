@@ -43,16 +43,24 @@ const vec4 quad[4] = vec4[] (vec4(-1.0, 1.0, 0.0, 1.0),
 
 void main(void)
 {
-	// Assign position depending on pass
-	outData.position = (pass == 0) ? pos_attrib : vec3(M * vec4(pos_attrib, 1.0)); // World-space vertex position
-	outData.tex_coord = tex_coord_attrib; // Send tex_coord to fragment shader
+	if (pass != 4)
+	{
+		// Assign position depending on pass
+		outData.position = (pass == 0) ? pos_attrib : vec3(M * vec4(pos_attrib, 1.0)); // World-space vertex position
+		outData.tex_coord = tex_coord_attrib; // Send tex_coord to fragment shader
 	
-	outData.eye_dir = -1.0 * normalize(vec3(M * vec4(pos_attrib, 1.0)));
-	outData.light_dir = normalize(Light.light_w).xyz;
+		outData.eye_dir = -1.0 * normalize(vec3(M * vec4(pos_attrib, 1.0)));
+		outData.light_dir = normalize(Light.light_w).xyz;
 
-	outData.normal = normalize(M * vec4(normal_attrib, 0.0)).xyz;
+		outData.normal = normalize(M * vec4(normal_attrib, 0.0)).xyz;
 
-	outData.depth =  (pass == 0) ? 1.0f : (PV * vec4(pos_attrib, 1.0)).z; // Send eye-space depth
+		outData.depth =  (pass == 0) ? 1.0f : (PV * vec4(pos_attrib, 1.0)).z; // Send eye-space depth
 
-	gl_Position = (pass == 0) ? vec4(outData.position, 1.0) : PV * vec4(outData.position, 1.0);
+		gl_Position = (pass == 0) ? vec4(outData.position, 1.0) : PV * vec4(outData.position, 1.0);
+	}
+	else
+	{
+		gl_Position = quad[ gl_VertexID ]; //get clip space coords out of quad array
+		outData.tex_coord = 0.5*(quad[ gl_VertexID ].xy + vec2(1.0)); 
+	}
 }

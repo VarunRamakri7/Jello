@@ -59,6 +59,8 @@ void main(void)
             {
                 // Store eye-space depth
                 depthVal = inData.depth;
+
+                fragcolor = vec4(0.85f, 0.25f, 0.25f, 1.0f);
             }
             else
             {
@@ -76,17 +78,20 @@ void main(void)
 
                 // Compute Beer's Law for final color
 
-                fragcolor = min(HackTransparency(), vec4(1.0));
+                //fragcolor = vec4(0.25f, 0.25f, 0.85f, 1.0f);
             }
             else
             {
                 discard; // Discard back facing fragments
             }
             break;
+        case 4:
+            fragcolor = min(HackTransparency(), vec4(1.0));
+            break;
         default:
             fragcolor = min(HackTransparency(), vec4(1.0));
             break;
     }
 
-	//fragcolor = vec4(normal, 1.0f); // Color as normals
+	//fragcolor = vec4(inData.normal, 1.0f); // Color as normals
 }
