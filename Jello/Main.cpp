@@ -202,18 +202,17 @@ void DrawHackScene()
 /// </summary>
 void DrawScene()
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-
-    glDrawBuffers(2, buffers); // Draw to color attachment 0 and 1
-
     // Pass 0: Draw background
     glUniform1i(UniformLocs::pass, BACKGROUND);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO); // Render to FBO
+    glDrawBuffers(2, buffers); // Draw to color attachment 0 and 1
     
     glViewport(0, 0, screen_width, screen_height); // Change viewport size
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear FBO texture
 
     // Clear texture
-    glClearBufferfv(GL_COLOR, 1, clear);
+    //glClearBufferfv(GL_COLOR, 0, clear);
     
     // Draw background quad
     glBindVertexArray(bg_vao);
@@ -233,13 +232,11 @@ void DrawScene()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDrawBuffer(GL_BACK);
 
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glViewport(0, 0, screen_width, screen_height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear FBO texture
 
     glBindTextureUnit(0, fbo_tex);
     glBindTextureUnit(1, depth_tex);
-
-    //glViewport(0, 0, screen_width, screen_height);
 
     glDisable(GL_DEPTH_TEST);
     glBindVertexArray(attribless_vao);

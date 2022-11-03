@@ -30,7 +30,7 @@ out VertexData
 	vec3 position;
 	vec3 eye_dir;
 	vec3 light_dir;
-	float depth;
+	vec4 depth;
 } outData;
 
 const float near = 0.1f;
@@ -54,7 +54,7 @@ void main(void)
 
 		outData.normal = normalize(M * vec4(normal_attrib, 0.0)).xyz;
 
-		outData.depth =  (pass == 0) ? 1.0f : (PV * vec4(pos_attrib, 1.0)).z; // Send eye-space depth
+		outData.depth =  (pass == 0) ? vec4(1.0f) : (PV * vec4(pos_attrib, 1.0)); // Send eye-space depth
 
 		gl_Position = (pass == 0) ? vec4(outData.position, 1.0) : PV * vec4(outData.position, 1.0);
 	}

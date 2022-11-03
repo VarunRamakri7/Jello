@@ -31,11 +31,11 @@ in VertexData
 	vec3 position;
 	vec3 eye_dir;
 	vec3 light_dir;
-	float depth;
+	vec4 depth;
 } inData;
 
 out layout(location = 0) vec4 fragcolor; //the output color for this fragment    
-out layout(location = 1) float depthVal; // Write depth to Color attachment 1
+out layout(location = 1) vec4 depthVal; // Write depth to Color attachment 1
 
 vec4 HackTransparency()
 {
@@ -58,7 +58,7 @@ void main(void)
             if(!gl_FrontFacing)
             {
                 // Store eye-space depth
-                depthVal = inData.depth;
+                depthVal = vec4(inData.depth.z);
 
                 fragcolor = vec4(0.85f, 0.25f, 0.25f, 1.0f);
             }
