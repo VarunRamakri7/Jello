@@ -86,7 +86,7 @@ void main(void)
             }
             break;
         case 4:
-            fragcolor = min(HackTransparency(), vec4(1.0));
+            fragcolor = Light.bg_color;
             break;
         default:
             fragcolor = min(HackTransparency(), vec4(1.0));
