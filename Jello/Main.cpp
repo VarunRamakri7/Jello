@@ -210,9 +210,6 @@ void DrawScene()
     
     glViewport(0, 0, screen_width, screen_height); // Change viewport size
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear FBO texture
-
-    // Clear texture
-    //glClearBufferfv(GL_COLOR, 0, clear);
     
     // Draw background quad
     glBindVertexArray(bg_vao);
@@ -235,8 +232,8 @@ void DrawScene()
     glViewport(0, 0, screen_width, screen_height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear FBO texture
 
-    glBindTextureUnit(0, fbo_tex);
-    glBindTextureUnit(1, depth_tex);
+    glBindTextureUnit(0, fbo_tex); // Bind color texture
+    glBindTextureUnit(1, depth_tex); // Bind depth texture
 
     glDisable(GL_DEPTH_TEST);
     glBindVertexArray(attribless_vao);

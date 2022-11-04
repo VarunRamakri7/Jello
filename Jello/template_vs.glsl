@@ -26,10 +26,10 @@ in vec3 normal_attrib;
 out VertexData
 {
 	vec2 tex_coord;
-	vec3 normal;
-	vec3 position;
-	vec3 eye_dir;
-	vec3 light_dir;
+	vec3 normal; // World-space unit normal vector
+	vec3 position; // World-space vertex position
+	vec3 eye_dir; // Normalized eye-direction
+	vec3 light_dir; // Normalized light direction
 	vec4 depth;
 } outData;
 
@@ -49,7 +49,7 @@ void main(void)
 		outData.position = (pass == 0) ? pos_attrib : vec3(M * vec4(pos_attrib, 1.0)); // World-space vertex position
 		outData.tex_coord = tex_coord_attrib; // Send tex_coord to fragment shader
 	
-		outData.eye_dir = -1.0 * normalize(vec3(M * vec4(pos_attrib, 1.0)));
+		outData.eye_dir = -1.0 * normalize(outData.position);
 		outData.light_dir = normalize(Light.light_w).xyz;
 
 		outData.normal = normalize(M * vec4(normal_attrib, 0.0)).xyz;
@@ -58,7 +58,7 @@ void main(void)
 
 		gl_Position = (pass == 0) ? vec4(outData.position, 1.0) : PV * vec4(outData.position, 1.0);
 	}
-	else
+	else // Draw fullscreen quad
 	{
 		gl_Position = quad[ gl_VertexID ]; //get clip space coords out of quad array
 		outData.tex_coord = 0.5*(quad[ gl_VertexID ].xy + vec2(1.0)); 

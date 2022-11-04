@@ -27,10 +27,10 @@ layout(std140, binding = 2) uniform CameraUniforms {
 in VertexData
 {
 	vec2 tex_coord;
-	vec3 normal;
-	vec3 position;
-	vec3 eye_dir;
-	vec3 light_dir;
+	vec3 normal; // World-space unit normal vector
+	vec3 position; // World-space vertex position
+	vec3 eye_dir; // Normalized eye-direction
+	vec3 light_dir; // Normalized light direction
 	vec4 depth;
 } inData;
 
