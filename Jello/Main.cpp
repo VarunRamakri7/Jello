@@ -150,16 +150,7 @@ void MouseButtonCallback(GLFWwindow* window, int button, int state, int mods) {
     {
         trackball.Set(window, false, mouseX, mouseY);
         mouseLeft = false;
-        
-        glm::vec2 changeP = glm::vec2(mouseX, mouseY) - mousePosA;
-        float moved = glm::length(changeP);
-        float timeDiff = time_sec - mouseClickTime;
-        if (timeDiff > 0.01) {
-            // drag
-           dragV = changeP / (timeDiff * timeDiff ) * 0.001f;
-            std::cout << dragV.x << " " << dragV.y << " " << std::endl;
-        }
-        // calculate acceleration 
+        dragV = glm::vec2(0.0); //reset
     }
     if (button == GLFW_MOUSE_BUTTON_MIDDLE && state == GLFW_PRESS)
     {
@@ -190,7 +181,8 @@ void display(GLFWwindow* window)
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
    //glm::mat4 M = glm::rotate(angle, glm::vec3(0.0f, 1.0f, 0.0f))*glm::scale(glm::vec3(scale*mesh_data.mScaleFactor));
-   glm::mat4 M = myCube->getModelMatrix() * trackball.Set3DViewCameraMatrix();
+   //glm::mat4 M = myCube->getModelMatrix() * trackball.Set3DViewCameraMatrix();
+   glm::mat4 M = myCube->getModelMatrix();
    glm::mat4 PV = myCamera->getPV();\
    //std::cout << glm::to_string(M) << std::endl;
    glUseProgram(shader_program);
@@ -231,6 +223,23 @@ void display(GLFWwindow* window)
 void idle()
 {
    time_sec = static_cast<float>(glfwGetTime());
+
+   if (mouseLeft) {
+       // hold
+       std::cout << "press" << std::endl;
+
+       // calculate acceleration 
+       glm::vec2 changeP = glm::vec2(mouseX, mouseY) - mousePosA;
+       float moved = glm::length(changeP);
+       float timeDiff = time_sec - mouseClickTime;
+       if (timeDiff > 0.01) {
+           // drag
+           dragV = changeP / (timeDiff * timeDiff) * 0.001f;
+           std::cout << dragV.x << " " << dragV.y << " " << std::endl;
+       }
+
+   }
+
 
    //Pass time_sec value to the shaders
    int time_loc = glGetUniformLocation(shader_program, "time");
