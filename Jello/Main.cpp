@@ -18,6 +18,7 @@
 #include "LoadTexture.h"   //Functions for creating OpenGL textures from image files
 #include "VideoMux.h"      //Functions for saving videos
 #include "trackball.h"
+#include "BoundingBox.h"
 
 #include <glm/gtx/string_cast.hpp> // for debug
 
@@ -40,6 +41,11 @@ MeshData mesh_data;
 
 float angle = 0.0f;
 float scale = 1.0f;
+float drag = 10.0f;
+glm::vec2 mousePosA;
+float mouseClickTime = 0.0f;
+float mouseReleaseTime = 0.0f;
+glm::vec2 dragV = glm::vec2(0.0);
 bool recording = false;
 
 
@@ -50,6 +56,7 @@ bool mouseLeft, mouseMid, mouseRight;
 GLdouble mouseX, mouseY;
 
 Cube* myCube;
+BoundingBox* boundingBox;
 
 void draw_gui(GLFWwindow* window)
 {
@@ -133,11 +140,23 @@ void MouseButtonCallback(GLFWwindow* window, int button, int state, int mods) {
     {
         trackball.Set(window, true, mouseX, mouseY);
         mouseLeft = true;
+        mouseClickTime = time_sec;
+        mousePosA = glm::vec2(mouseX, mouseY); // store clicked pos
     }
     if (button == GLFW_MOUSE_BUTTON_LEFT && state == GLFW_RELEASE)
     {
         trackball.Set(window, false, mouseX, mouseY);
         mouseLeft = false;
+        
+        glm::vec2 changeP = glm::vec2(mouseX, mouseY) - mousePosA;
+        float moved = glm::length(changeP);
+        float timeDiff = time_sec - mouseClickTime;
+        if (timeDiff > 0.01) {
+            // drag
+           dragV = changeP / (timeDiff * timeDiff ) * 0.001f;
+            std::cout << dragV.x << " " << dragV.y << " " << std::endl;
+        }
+        // calculate acceleration 
     }
     if (button == GLFW_MOUSE_BUTTON_MIDDLE && state == GLFW_PRESS)
     {
@@ -174,7 +193,9 @@ void display(GLFWwindow* window)
    //std::cout << glm::to_string(M) << std::endl;
    glUseProgram(shader_program);
 
+   boundingBox->render(1);
    myCube->render(1, showDiscrete);
+   
    //glActiveTexture(GL_TEXTURE0);
    //glBindTexture(GL_TEXTURE_2D, texture_id);
    //int tex_loc = glGetUniformLocation(shader_program, "diffuse_tex");
@@ -320,6 +341,7 @@ int main(int argc, char **argv)
    initOpenGL();
    myCube = new Cube(8);
    myCube->setSpringMode(true, true, true);
+   boundingBox = new BoundingBox(init_window_width, init_window_height, init_window_width, glm::vec3(-init_window_width/2, init_window_height / 2, 5.0f));
    
    //Init ImGui
    IMGUI_CHECKVERSION();
@@ -331,6 +353,7 @@ int main(int argc, char **argv)
    while (!glfwWindowShouldClose(window))
    {
       idle();
+      myCube->setExternalForce(glm::vec3(dragV, 0.0));
       myCube->updatePoints(time_sec);
       display(window);
 

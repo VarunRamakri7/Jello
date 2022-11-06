@@ -22,6 +22,7 @@ class Cube {
         glm::mat4 getModelMatrix();
         void setSpringMode(bool structural, bool shear, bool bend);
         void updatePoints(float time);
+        void setExternalForce(glm::vec3 force);
 
     private:
         int resolution = 8;

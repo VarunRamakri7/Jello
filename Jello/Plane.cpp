@@ -1,0 +1,93 @@
+#include "Plane.h"
+
+Plane::Plane(glm::vec3 pointA, glm::vec3 pointB, glm::vec3 pointC, glm::vec3 pointD) {
+    // finite plane
+
+    this->pointA = pointA; // top left
+    this->pointB = pointB; // top right
+    this->pointC = pointC; // bottom left
+    this->pointD = pointD; // bottom right
+
+    this->initArrays();
+}
+
+bool Plane::checkCollision(glm::vec3 point) {
+    // check as if plane is 2 triangles 
+    if (pointInTriangle(point, this->pointD, this->pointC, this->pointA) || pointInTriangle(point, this->pointA, this->pointB, this->pointD)) {
+        return true;
+    }
+    return false;
+}
+
+bool Plane::pointInTriangle(glm::vec3 point, glm::vec3 triangleA, glm::vec3 triangleB, glm::vec3 triangleC) {
+    if (sameSide(point, triangleA, triangleB, triangleC) && sameSide(point, triangleB, triangleA, triangleC) && sameSide(point, triangleC, triangleA, triangleB)) {
+        return true;
+    }
+    return false;
+}
+
+bool Plane::sameSide(glm::vec3 lineA, glm::vec3 lineB, glm::vec3 pointA, glm::vec3 pointB) {
+    glm::vec3 crossA = glm::cross(pointB - pointA, lineA - pointA);
+    glm::vec3 crossB = glm::cross(pointB - pointA, lineB - pointA);
+
+    if (glm::dot(crossA, crossB) >= 0) {
+        return true;
+    }
+    return false;
+}
+
+void Plane::render(GLuint modelParameter) {
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glEnableVertexAttribArray(0);
+
+  
+    // enable point size
+    // 
+    //glEnable(GL_PROGRAM_POINT_SIZE);
+    glPointSize(5);
+    glDrawArrays(GL_POINTS, 0, this->dataSize / 3); // TODO Really? can i divide 3 again? 
+    //glDisable(GL_PROGRAM_POINT_SIZE);
+};
+
+
+glm::mat4 Plane::getModelMatrix() {
+    return this->modelMatrix;
+}
+
+void Plane::initArrays() {
+    // init buffers
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+
+    // send to GPU
+    // rendering as triangle strip
+    this->data.push_back(this->pointA.x);
+    this->data.push_back(this->pointA.y);
+    this->data.push_back(this->pointA.z);
+
+    this->data.push_back(this->pointC.x);
+    this->data.push_back(this->pointC.y);
+    this->data.push_back(this->pointC.z);
+
+    this->data.push_back(this->pointB.x);
+    this->data.push_back(this->pointB.y);
+    this->data.push_back(this->pointB.z);
+
+    this->data.push_back(this->pointD.x);
+    this->data.push_back(this->pointD.y);
+    this->data.push_back(this->pointD.z);
+
+    this->dataSize = this->data.size();
+
+    glBufferData(GL_ARRAY_BUFFER, this->dataSize * sizeof(GLfloat), this->data.data(), GL_DYNAMIC_DRAW);
+
+    this->data.clear();
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}

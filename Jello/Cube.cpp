@@ -206,8 +206,8 @@ void Cube::updatePoints(float time) {
 
         // update forces
         // Apply external force (total force)
-        //force = force + *currentPoint->getExternalForce();
-        force = force + glm::dvec3(0.0, 2.0 * sin(time), 0.0) ;
+        force = force + glm::dvec3(*currentPoint->getExternalForce());
+        //force = force + glm::dvec3(0.0, 2.0 * sin(time), 0.0) ;
         
         // Acceleration f = ma
         glm::dvec3 acc = force / this->mass;
@@ -221,6 +221,18 @@ void Cube::updatePoints(float time) {
         // Position
         glm::dvec3 pos = *currentPoint->getPosition() + (*currentPoint->getVelocity() * float(this->timeStep));
         currentPoint->setPosition(pos);
+    }
+}
+
+void Cube::setExternalForce(glm::vec3 force) {
+    for (int i = 0; i < discretePoints.size(); i++) {
+        MassPoint* currentPoint = discretePoints[i];
+
+        if (currentPoint->getFixed() == true) {
+            continue;
+        }
+
+        currentPoint->setExternalForce(force); // at position? -> should get point of collision
     }
 }
 
