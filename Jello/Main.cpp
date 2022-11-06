@@ -19,6 +19,7 @@
 #include "VideoMux.h"      //Functions for saving videos
 #include "trackball.h"
 #include "BoundingBox.h"
+#include "Camera.h"
 
 #include <glm/gtx/string_cast.hpp> // for debug
 
@@ -57,6 +58,8 @@ GLdouble mouseX, mouseY;
 
 Cube* myCube;
 BoundingBox* boundingBox;
+Camera* myCamera;
+const glm::vec3 cameraInitPos = glm::vec3(0.0f, 0.0f, 5.0f);
 
 void draw_gui(GLFWwindow* window)
 {
@@ -188,8 +191,7 @@ void display(GLFWwindow* window)
 
    //glm::mat4 M = glm::rotate(angle, glm::vec3(0.0f, 1.0f, 0.0f))*glm::scale(glm::vec3(scale*mesh_data.mScaleFactor));
    glm::mat4 M = myCube->getModelMatrix() * trackball.Set3DViewCameraMatrix();
-   glm::mat4 V = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-   glm::mat4 P = glm::perspective(65.f, 1.f, 0.01f, 1000.f);
+   glm::mat4 PV = myCamera->getPV();\
    //std::cout << glm::to_string(M) << std::endl;
    glUseProgram(shader_program);
 
@@ -202,7 +204,7 @@ void display(GLFWwindow* window)
    //glUniform1i(tex_loc, 0); // we bound our texture to texture unit 0
 
    //Get location for shader uniform variable
-   glm::mat4 PVM = P*V*M;
+   glm::mat4 PVM = PV *M;
    int PVM_loc = glGetUniformLocation(shader_program, "PVM");
    glUniformMatrix4fv(PVM_loc, 1, false, glm::value_ptr(PVM));
 
@@ -339,6 +341,8 @@ int main(int argc, char **argv)
    glfwSetMouseButtonCallback(window, MouseButtonCallback);
 
    initOpenGL();
+   myCamera = new Camera();
+   myCamera->setPosition(cameraInitPos);
    myCube = new Cube(8);
    myCube->setSpringMode(true, true, true);
    boundingBox = new BoundingBox(init_window_width, init_window_height, init_window_width, glm::vec3(-init_window_width/2, init_window_height / 2, 5.0f));
