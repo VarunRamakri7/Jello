@@ -1,7 +1,16 @@
 #include "Physics.h"
 #include <iostream>
 
-// collision detection
+// COLLISION DETECTION
+
+/**
+ * checks if given point is in triangle formed by the 3 given points
+ * @param glm::vec3 point
+ * @param glm::vec3 triangleA - vertex A of triangle
+ * @param glm::vec3 triangleB - vertex B of triangle
+ * @param glm::vec3 triangleC - vertex C of triangle
+ * @return bool - true if in the triangle
+ */
 bool isPointInTriangle(glm::vec3 point, glm::vec3 triangleA, glm::vec3 triangleB, glm::vec3 triangleC) {
     if (isSameSide(point, triangleA, triangleB, triangleC) && isSameSide(point, triangleB, triangleA, triangleC) && isSameSide(point, triangleC, triangleA, triangleB)) {
         return true;
@@ -26,7 +35,6 @@ bool isPointInNegativeSide(const glm::vec3& point, const Plane& plane){
     // F(x,y,z)>0 on one side of the plane and F(x,y,z)<0 on the other
     // return pl.a * pt.x + pl.b * pt.y + pl.c * pt.z + pl.d >= 0;
     return glm::dot(plane.normal, point) - glm::dot(plane.normal, plane.pointInPlane) < 0;
-    // return false;
 }
 
 bool isPointInBox(const glm::vec3 point, BoundingBox* const bbox) {
@@ -38,9 +46,8 @@ bool isPointInBox(const glm::vec3 point, BoundingBox* const bbox) {
 bool checkCollision(Cube* const cube, BoundingBox* const bbox) {
     // for mass points in cube, check if in boundingbox
     // if not inside, check if colliding 
-    const std::vector <MassPoint*>& vecRef = *cube->getMassPoints();
-    for (int i = 0; i < vecRef.size(); i++) {
-        MassPoint* massPoint = vecRef[i];
+    for (int i = 0; i < cube->discretePoints.size(); i++) {
+        MassPoint* massPoint = cube->discretePoints[i];
         const glm::dvec3* pos = massPoint->getPosition();
         if (isPointInBox(*pos, bbox)) {
             // collide 
@@ -57,82 +64,114 @@ bool checkCollision(Cube* const cube, BoundingBox* const bbox) {
     return false;
 }
 
-// give jello a structure
-void computeSpringAcceleration(const double stiffness, const double damping, const double mass, MassPoint* currentPoint) {
 
+// PHYSICS
+
+/**
+ * computes spring force and acceleration per point 
+ * @param const double* const  stiffness - constant pointer to constant double stiffness 
+ * @param const double* const  damping - vertex A of triangle
+ * @param const double* const  mass - vertex B of triangle
+ * @param MassPoint* const currentPoint - constant pointer to current MassPoint
+ */
+void computeSpringAcceleration(const double* const stiffness, const double* const damping, const double* const mass, MassPoint* const currentPoint) {
+    // gets all connected masspoints (depends on the spring types enabled)
     for (int c = 0; c < currentPoint->getConnectionCount(); c++) {
         MassPoint* pointB = currentPoint->getConnection(c);
 
         glm::dvec3 s = calculateSpringForce(stiffness, currentPoint, pointB);
         glm::dvec3 d = calculateDampingForce(damping, currentPoint, pointB);
         glm::dvec3 force = s + d;
-
+        
+        // F = ma -> a = F / m 
+        // update force on current mass point
+        currentPoint->addAcceleration(force / *mass);
         // update opposite forces on B 
-        pointB->addAcceleration(-force / mass);
-        currentPoint->addAcceleration(force / mass);
+        pointB->addAcceleration(-force / *mass);
     }
 }
 
-
-void computeAcceleration(const double stiffness, const double damping, const double mass, Cube* cube) {
-    
-    // compute forces at each node 
+/**
+ * computes accumulated acceleration for all masspoints in cube
+ * @param Cube* cube
+ */
+void computeAcceleration(Cube* cube) {
+    // reset accumulated acceleration to 0
     cube->resetAcceleration();
     
-    // spring acceleration
-
+    // goes through all masspoints
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
 
-        // need to compute all acceration, then get stored acceleration to do velocity 
-        computeSpringAcceleration(stiffness, damping, mass, currentPoint);
+        // calculate spring acceleration for each mass points
+        computeSpringAcceleration(&cube->stiffness, &cube->damping, &cube->mass, currentPoint);
 
         // external forces
-        // division is expensive? 
-        glm::dvec3 externalAcc = (*currentPoint->getExternalForce()) / mass;
+        // TODO  division is expensive? 
+        glm::dvec3 externalAcc = (*currentPoint->getExternalForce()) / cube->mass;
         currentPoint->addAcceleration(externalAcc);
     }
 }
 
-glm::dvec3 calculateSpringForce(const double kh, MassPoint* pointA, MassPoint* pointB) {
-    // hooks law in 3d
-    // kh is already negative
+/**
+ * computes Hooks law in 3D (spring force)
+ * @param const double* const kh - hook's constant = stiffness (should be negative)
+ * @param MassPoint* pointA - current mass point
+ * @param MassPoint* pointB - neighboring mass point
+ * @return glm::dvec3 - spring force
+ */
+glm::dvec3 calculateSpringForce(const double* const kh, MassPoint* pointA, MassPoint* pointB) {
     // F = kh * (|L| - R) * (L / |L|)
-    // end - start
+    // vector from start to end = end - start
     glm::dvec3 L = *(pointA->getPosition()) - *(pointB->getPosition()); // vector from current neighbor (pointB) to point (pointA)
     double currentLength = glm::length(L);
     double restLength = glm::length(*(pointA->getInitialPosition()) - *(pointB->getInitialPosition()));
-    //glm::dvec3 Lnorm = glm::normalize(L);
-    //glm::dvec3 Llen =  L / currentLength;
-    return kh * (currentLength - restLength) * (L / currentLength);
+
+    return *kh * (currentLength - restLength) * (L / currentLength);
 }
 
-// kd is already negative 
-glm::dvec3 calculateDampingForce(double kd, MassPoint* pointA, MassPoint* pointB) {
+/**
+ * computes damping force in 3D 
+ * @param const double* const kd - damping constant (should be negative)
+ * @param MassPoint* pointA - current mass point
+ * @param MassPoint* pointB - neighboring mass point
+ * @return glm::dvec3 - damping force
+ */
+glm::dvec3 calculateDampingForce(const double* const kd, MassPoint* const pointA, MassPoint* const pointB) {
     // F = kd * ((Va - Vb) dot L ) / |L| * (L / |L|)
     glm::dvec3 L = *pointA->getPosition() - *pointB->getPosition(); // vector from current neighbor (pointB) to point (pointA)
     double lengthL = glm::length(L); // current distance between pointA and pointB
     glm::dvec3 velocityDiff = *pointA->getVelocity() - *pointB->getVelocity();
 
-    return kd * (glm::dot(velocityDiff, L) / lengthL) * (L / lengthL); // is glm::normalize(L) the same? 
-
+    return *kd * (glm::dot(velocityDiff, L) / lengthL) * (L / lengthL);
 }
 
-//integrator
-void euler(Cube* cube) {
-    
-    // doubles precision
-    computeAcceleration(cube->stiffness, cube->damping, cube->mass, cube);
 
+// INTEGRATORS - numerical solution to analytical problems
+
+/**
+ * performs one step Euler integration (may explode if time step is too big), 
+ * approximating the acceleration
+ * velocity = dx/dt (change in position over change in time)
+ * acceleration = dv/dt (change in velocity over change in time)
+ * @param Cube* const cube - constant pointer to a cube
+ */
+void euler(Cube* const cube) {
+    
+    // compute accumulated acceleration of mass points in cube
+    computeAcceleration(cube);
+
+    // integrate 
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
 
-        if (currentPoint->getFixed() == true) {
+        if (currentPoint->isFixed() == true) {
+            // stays the same
             continue;
         }
 
-        // one step euler integration 
-            // Velocity
+        // one step euler
+        // Velocity
         glm::dvec3 vel = *currentPoint->getVelocity() + (*currentPoint->getAcceleration() * cube->timeStep);
         currentPoint->setVelocity(vel);
 
@@ -142,41 +181,40 @@ void euler(Cube* cube) {
     }
 }
 
+/**
+ * performs Runge-Kutta 4th order integration (more stable but requires smaller time step than euler),
+ * approximating the change in position and velocity using doubles
+ * @param Cube* const cube - constant pointer to a cube
+ */
+
 void RK4(Cube* cube) {
     // needs 4 integration for both point and velocity 
     // approximate differential equations
 
-    // make 4 arrays of glm::dvec3 for position and velocity integration 
-    std::vector <glm::dvec3> F1p{};
-    std::vector <glm::dvec3> F2p{};
-    std::vector <glm::dvec3> F3p{};
-    std::vector <glm::dvec3> F4p{};
+    // make 4 arrays of glm::dvec3 for differentiated position and velocity
+    std::vector <glm::dvec3> F1p{}; // first step for position
+    std::vector <glm::dvec3> F2p{}; // second step for position
+    std::vector <glm::dvec3> F3p{}; // third step for position
+    std::vector <glm::dvec3> F4p{}; // fourth step for position
 
-    std::vector <glm::dvec3> F1v{};
-    std::vector <glm::dvec3> F2v{};
-    std::vector <glm::dvec3> F3v{};
-    std::vector <glm::dvec3> F4v{};
+    std::vector <glm::dvec3> F1v{}; // first step for velocity
+    std::vector <glm::dvec3> F2v{}; // second step for velocity
+    std::vector <glm::dvec3> F3v{}; // third step for velocity
+    std::vector <glm::dvec3> F4v{}; // fourth step for velocity
 
-    Cube buffer = *cube;
+    Cube buffer = *cube; // make a copy of cube
 
-    computeAcceleration(cube->stiffness, cube->damping, cube->mass, cube);
+    // compute accumulated acceleration for all mass points in cube
+    computeAcceleration(cube);
 
+    // integrate
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
         MassPoint* bufferPoint = buffer.discretePoints[i];
 
-        // just buffer no surface, TODO do we need 
-        // make constructor that takes vel and pos
-        // TODO CANNOT NEED JELLO< NEED TO COMPUTE ACCELEARTION FOR ALL!!!!!
-        //MassPoint* bufferPoint = new MassPoint(*currentPoint->getPosition(), *currentPoint->getVelocity());
+        // dx/dt = F(t, x)
+        // 1st step: k1 =  F(t0, x0)
 
-        // OH THIS MODEL DOESNT HAVE FIXED< WE CANT JUST SKIP!!!!
-
-        // doubles precision
-        
-
-        // first step: k1 = dt * f(x0, t0) -> F1p, F1v
-        // * 0.5 for midpoint 
         // Position
         glm::dvec3 dVel = *currentPoint->getVelocity() * cube->timeStep;
         // Velocity
@@ -184,11 +222,12 @@ void RK4(Cube* cube) {
 
         F1p.push_back(dVel);
         F1v.push_back(dAcc);
-
+        
+        // store for second step: 
         glm::dvec3 m_pos = *currentPoint->getPosition() + (dVel * 0.5);
         glm::dvec3 m_vel = *currentPoint->getVelocity() + (dAcc * 0.5);
         
-        if (currentPoint->getFixed() == true) {
+        if (currentPoint->isFixed() == true) {
             // no change
             bufferPoint->setPosition(*currentPoint->getPosition());
             bufferPoint->setVelocity(*currentPoint->getVelocity());
@@ -199,14 +238,13 @@ void RK4(Cube* cube) {
         }
     }
 
-    computeAcceleration(cube->stiffness, cube->damping, cube->mass, &buffer);
+    computeAcceleration(&buffer);
 
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
         MassPoint* bufferPoint = buffer.discretePoints[i];
 
-        // first step: k1 = dt * f(x0, t0) -> F1p, F1v
-        // * 0.5 for midpoint 
+        // 2nd step: k2 = F(t + dt/2, x + h * k1/2) 
         // Position
         glm::dvec3 dVel = *bufferPoint->getVelocity()* cube->timeStep;
         F2p.push_back(dVel);
@@ -215,10 +253,11 @@ void RK4(Cube* cube) {
         glm::dvec3 dAcc = *bufferPoint->getAcceleration() * cube->timeStep;
         F2v.push_back(dAcc);
 
+        // store for 3rd step
         glm::dvec3 m_pos = *currentPoint->getPosition() + (dVel * 0.5);
         glm::dvec3 m_vel = *currentPoint->getVelocity() + (dAcc * 0.5);
        
-        if (currentPoint->getFixed() == true) {
+        if (currentPoint->isFixed() == true) {
             // no change
             bufferPoint->setPosition(*currentPoint->getPosition());
             bufferPoint->setVelocity(*currentPoint->getVelocity());
@@ -229,14 +268,13 @@ void RK4(Cube* cube) {
         }
     }
 
-    computeAcceleration(cube->stiffness, cube->damping, cube->mass, &buffer);
+    computeAcceleration(&buffer);
 
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
         MassPoint* bufferPoint = buffer.discretePoints[i];
 
-        // first step: k1 = dt * f(x0, t0) -> F1p, F1v
-        // * 0.5 for midpoint 
+        // 3rd step: k3 = F(t + dt/2, x + h * k2/2) 
         // Position
         glm::dvec3 dVel = *bufferPoint->getVelocity() * cube->timeStep;
         F3p.push_back(dVel);
@@ -245,10 +283,11 @@ void RK4(Cube* cube) {
         glm::dvec3 dAcc = *bufferPoint->getAcceleration() * cube->timeStep;
         F3v.push_back(dAcc);
 
+        // store for 4th step
         glm::dvec3 m_pos = *currentPoint->getPosition() + dVel;
         glm::dvec3 m_vel = *currentPoint->getVelocity() + dAcc;
 
-        if (currentPoint->getFixed() == true) {
+        if (currentPoint->isFixed() == true) {
             // no change
             bufferPoint->setPosition(*currentPoint->getPosition());
             bufferPoint->setVelocity(*currentPoint->getVelocity());
@@ -259,14 +298,13 @@ void RK4(Cube* cube) {
         }
     }
 
-    computeAcceleration(cube->stiffness, cube->damping, cube->mass, &buffer);
+    computeAcceleration(&buffer);
 
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
         MassPoint* bufferPoint = buffer.discretePoints[i];
 
-        // first step: k1 = dt * f(x0, t0) -> F1p, F1v
-        // * 0.5 for midpoint 
+        // 4th step: k4 = F(t + dt, x + h * k3) 
         // Position
         glm::dvec3 dVel = *bufferPoint->getVelocity() * cube->timeStep;
         F4p.push_back(dVel);
@@ -275,32 +313,17 @@ void RK4(Cube* cube) {
         glm::dvec3 dAcc = *bufferPoint->getAcceleration() * cube->timeStep;
         F4v.push_back(dAcc);
 
-        if (currentPoint->getFixed() == true) {
+        if (currentPoint->isFixed() == true) {
             // no change
             continue;
         }
 
+        // dx = dt * (k1 + 2 * k2 + 2* k3 + k4)/6
+        // x = x + dx
         glm::dvec3 p = *currentPoint->getPosition() + ((F1p[i] + (F2p[i] * 2.0) + (F3p[i] * 2.0) + F4p[i]) / 6.0);
         glm::dvec3 v = *currentPoint->getVelocity() + ((F1v[i] + (F2v[i] * 2.0) + (F3v[i] * 2.0) + F4v[i]) / 6.0);
         currentPoint->setVelocity(v);
         currentPoint->setPosition(p);
-        
-        //bufferPoint->setPosition(*bufferPoint->getPosition() + *bufferPoint->getVelocity());
-        //bufferPoint->setPosition(*bufferPoint->getPosition() + F1v[i]);
-        //bufferPoint->setPosition(*bufferPoint->getPosition() + F4p[i]);
-        //bufferPoint->setPosition(*bufferPoint->getPosition() / 6.0);
-        //currentPoint->setPosition(*bufferPoint->getPosition() + *currentPoint->getPosition());
-
-        //glm::dvec3 v2 = F2v[i] * 2.0;
-        //glm::dvec3 v3 = F3v[i] * 2.0;
-        //bufferPoint->setPosition(v2);
-        //bufferPoint->setVelocity(v3);
-
-        //bufferPoint->setPosition(*bufferPoint->getPosition() + *bufferPoint->getVelocity());
-        //bufferPoint->setPosition(*bufferPoint->getPosition() + F1v[i]);
-        //bufferPoint->setPosition(*bufferPoint->getPosition() + F4v[i]);
-        //bufferPoint->setPosition(*bufferPoint->getPosition() / 6.0);
-        //currentPoint->setVelocity(*bufferPoint->getPosition() + *currentPoint->getVelocity());
     }
 
 }

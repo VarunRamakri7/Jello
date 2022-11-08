@@ -14,47 +14,54 @@
 #include "MassPoint.h"
 
 class Cube {
+    // jello 
+
     public:
 
+        Cube(); // default constructor
         Cube(int resolution);
-        Cube();
-
-        void render(GLuint modelParameter, bool showDiscrete);
-        glm::vec4 getModelCoord();
-        void getSurface();
-        glm::mat4 getModelMatrix();
+        
+        // setup
         void setSpringMode(bool structural, bool shear, bool bend);
-        void updatePoints(float time);
-        void setExternalForce(glm::vec3 force);
         void setFixedFloor(bool set);
+
         bool getFixedFloor();
-        std::vector <MassPoint*>* getMassPoints(); // get constant pointer to the mass points vector 
-        void resetAcceleration();
-        std::vector <MassPoint*> discretePoints{};
-        //physics
+
+        // render
+        glm::mat4 getModelMatrix();
+        void render(GLuint modelParameter, bool showDiscrete);
+        
+        // physics 
         double stiffness = -50;
         double damping = -0.5;
         double mass = 1.0;
         double timeStep = 0.005;
         int resolution = 8;
 
+        std::vector <MassPoint*> discretePoints{};
+
+        void resetAcceleration();
+        void setExternalForce(glm::vec3 force);
+
     private:
         float scale = 1.0f;
         glm::vec3 position = glm::vec3(0.0f);
+
+        // render
         GLuint VBO, VAO;
         std::vector <GLfloat> data {};
         int dataSize = 0;
-        void initArrays();
         glm::mat4 modelMatrix = glm::mat4(1.0f);
-        void fillDiscretePoints(bool structural, bool shear, bool bend);
-        //MassPoint**** massPointMap; // dynamic array of pointers 
-        
-        //std::vector <MassPoint> surfacePoints{};
 
+        void initArrays();
+        
+        // physics
         bool structuralSpring;
         bool shearSpring;
         bool bendSpring;
         bool fixedFloor = true;
+
+        void fillDiscretePoints(bool structural, bool shear, bool bend);
 
         // unit cube (m)
         const std::vector <glm::vec3> initPoints{
@@ -62,8 +69,6 @@ class Cube {
             glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(0.5f, 0.5f, -0.5f), glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec3(0.5f, 0.5f, 0.5f),
         };
 
-        
-        
 };
 
 

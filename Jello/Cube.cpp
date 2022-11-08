@@ -1,6 +1,5 @@
 
 #include "Cube.h"
-#include "Physics.h"
 
 #include <iostream>
 
@@ -169,16 +168,6 @@ void Cube::fillDiscretePoints(bool structural, bool shear, bool bend) {
     }
 }
 
-void Cube::getSurface() {
-
-    for (int i = 0; i < this->resolution; i++) {
-        for (int j = 0; j < this->resolution; j++) {
-            for (int k = 0; k < this->resolution; k++) {
-
-            }
-        }
-    }
-}
 
 void Cube::resetAcceleration() {
     // reset acceleration for all points
@@ -188,104 +177,11 @@ void Cube::resetAcceleration() {
     }
 }
 
-void Cube::updatePoints(float time) {
-    // TODO #pragma omp parallel for
-    // compute forces at each node 
-    resetAcceleration();
-    
-
-    for (int i = 0; i < discretePoints.size(); i++) {
-        MassPoint* currentPoint = discretePoints[i];
-
-        if (currentPoint->getFixed() == true) {
-            continue;
-        }
-
-        // doubles precision
-        //computeAcceleration(this->stiffness, this->damping, this->mass, currentPoint);
-
-        //std::cout << currentPoint.getConnectionCount() << std::endl;
-
-        // need to compute all acceration, then get stored acceleration to do velocity 
-        //for (int c = 0; c < currentPoint->getConnectionCount(); c++) {
-        //    MassPoint* pointB = currentPoint->getConnection(c);
-        //    glm::dvec3 BA = currentPoint->getActualLengthV(c); // vector from current point to neighbor
-        //    double restLength = glm::length(*(currentPoint->getInitialPosition()) - *(pointB->getInitialPosition()));
-        //    //glm::dvec3 BARest = currentPoint->getNaturalLengthV(c);
-
-        //    double currentNorm = glm::length(BA);
-        //    //double naturalNorm = glm::length(BARest); // spring rest length 
-
-        //    //// hook's law in 3d
-        //    ////glm::dvec3 hook = this->stiffness * (currentNorm - naturalNorm) * (BA / currentNorm);
-        //    ////std::cout << hook.x << " " << hook.y << " " << hook.z << std::endl;
-
-        //    ////glm::dvec3 damp = this->damping * (glm::dot(glm::dvec3(currentPoint->getVelocityDiff(c)),BA)/ currentNorm) * (BA / currentNorm);
-        //    ////std::cout << damp.x << " " << damp.y << " " << damp.z << std::endl;
-
-        //    //// TODO should we use dvec3? for double precision 
-        //    //glm::dvec3 forceByReturnSpring = (BA - BARest) * this->stiffness * 0.5;
-        //    //glm::dvec3 dampingForce = this->damping * glm::dvec3(*currentPoint->getVelocity());
-        //
-        //    //// why this doesn't work?
-        //    ////force = force + hook + damp;
-
-        //    //force = force + ((this->stiffness * (currentNorm - naturalNorm * naturalNorm / currentNorm)) * (BA / currentNorm)) +
-        //    //    forceByReturnSpring + dampingForce;
-        //    
-        //    
-        //    glm::dvec3 s = calculateSpringForce(this->stiffness, currentPoint, pointB);
-        //    glm::dvec3 d = calculateDampingForce(this->damping, currentPoint, pointB);
-        //   /* if (glm::length(d) == 0.0) {
-        //        std::cout << "d is not 0" << std::endl;
-        //    }
-        //    if (glm::length(s) == 0.0) {
-        //        std::cout << "s is not 0" << std::endl;
-        //    }*/
-        //   /* std::cout << " s: " << s.x << ", " << s.y << ", " << s.z << std::endl;
-        //    std::cout << " d: " << d.x << ", " << d.y << ", " << d.z << std::endl;*/
-        //    force =  s + d;
-
-        //    // update opposite forces on B 
-        // 
-        //    pointB->setAcceleration(-force / this->mass);
-
-        //    // one step euler integration 
-        //    // Velocity
-        //    glm::dvec3 bVel = *pointB->getVelocity() + (*pointB->getAcceleration() * float(this->timeStep));
-        //    pointB->setVelocity(bVel);
-
-        //    // Position
-        //    glm::dvec3 bPos = *pointB->getPosition() + (*pointB->getVelocity() * float(this->timeStep));
-        //    pointB->setPosition(bPos);
-
-        //}
-
-
-        // Apply external force (total force)
-        //force = force + glm::dvec3(*currentPoint->getExternalForce());
-        //force = force + glm::dvec3(0.0, 2.0 * sin(time), 0.0) ;
-        
-        // Acceleration f = ma
-        //glm::dvec3 acc = force / this->mass;
-        //currentPoint->setAcceleration(acc);
-
-        // one step euler integration 
-        // Velocity
-        glm::dvec3 vel = *currentPoint->getVelocity() + (*currentPoint->getAcceleration() * this->timeStep);
-        currentPoint->setVelocity(vel);
-
-        // Position
-        glm::dvec3 pos = *currentPoint->getPosition() + (*currentPoint->getVelocity() * this->timeStep);
-        currentPoint->setPosition(pos);
-    }
-}
-
 void Cube::setExternalForce(glm::vec3 force) {
     for (int i = 0; i < discretePoints.size(); i++) {
         MassPoint* currentPoint = discretePoints[i];
 
-        if (currentPoint->getFixed() == true) {
+        if (currentPoint->isFixed() == true) {
             // TODO: do we need this check? 
             continue;
         }
@@ -350,10 +246,6 @@ void Cube::initArrays() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-glm::vec4 Cube::getModelCoord() {
-    return this->modelMatrix * glm::vec4(0, 0, 0, 1.0);
-}
-
 void Cube::setSpringMode(bool structural, bool shear, bool bend) {
     this->discretePoints.clear();
     this->fillDiscretePoints(structural, shear, bend);
@@ -362,8 +254,3 @@ void Cube::setSpringMode(bool structural, bool shear, bool bend) {
     this->bendSpring = bend;
 }
 
-std::vector <MassPoint*>* Cube::getMassPoints() {
-    // get constant pointer to the mass points vector 
-
-    return &this->discretePoints;
-}

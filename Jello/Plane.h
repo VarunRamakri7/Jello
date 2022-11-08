@@ -12,28 +12,32 @@
 
 
 class Plane {
-public:
-    Plane(glm::vec3 pointA, glm::vec3 pointB, glm::vec3 pointC, glm::vec3 pointD);
-    bool checkCollision(glm::vec3 point);
-    void render(GLuint modelParameter); // TODO make class for renderable 
-    glm::vec4 getModelCoord();
-    glm::mat4 getModelMatrix();
-    const glm::vec3 getPointA();
-    glm::vec3 normal;
-    glm::vec3 pointInPlane;
+    public:
+        Plane(glm::vec3 pointA, glm::vec3 pointB, glm::vec3 pointC, glm::vec3 pointD);
+        
+        // render
+        void render(GLuint modelParameter); // TODO make class for renderable 
+        glm::mat4 getModelMatrix();
+        glm::vec3 normal;
 
-private:
-    glm::vec3 pointA; // top left
-    glm::vec3 pointB; // top right
-    glm::vec3 pointC; // bottom left
-    glm::vec3 pointD; // bottom right
+        // physics
+        bool checkCollision(glm::vec3 point);
+        glm::vec3 pointInPlane;
 
-    glm::vec3 position = glm::vec3(0.0f);
-    GLuint VBO, VAO;
-    std::vector <GLfloat> data{};
-    int dataSize = 0;
-    void initArrays();
-    glm::mat4 modelMatrix = glm::mat4(1.0f);
+    private:
+        glm::vec3 pointA; // top left
+        glm::vec3 pointB; // top right
+        glm::vec3 pointC; // bottom left
+        glm::vec3 pointD; // bottom right
+
+        glm::vec3 position = glm::vec3(0.0f);
+
+        GLuint VBO, VAO;
+        std::vector <GLfloat> data{};
+        int dataSize = 0;
+        glm::mat4 modelMatrix = glm::mat4(1.0f);
+
+        void initArrays();
 
 };
 

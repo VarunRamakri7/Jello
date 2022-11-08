@@ -14,16 +14,22 @@
 
 // takes care of the interactions between the objects in scene
 
+// jelly simulation
+glm::dvec3 calculateSpringForce(const double* const kh, MassPoint* const pointA, MassPoint* const pointB);
+glm::dvec3 calculateDampingForce(const double* const kd, MassPoint* const pointA, MassPoint* const pointB);
+void computeSpringAcceleration(const double* const stiffness, const double* const damping, const double* const mass, MassPoint* const currentPoint);
+void computeAcceleration(Cube* cube);
+
+// integrators
+void euler(Cube* cube);
+void RK4(Cube* cube);
+
+// collision
 bool isPointInTriangle(const glm::vec3 point, const glm::vec3 triangleA, const glm::vec3 triangleB, const glm::vec3 triangleC);
 bool isSameSide(const glm::vec3 lineA, const glm::vec3 lineB, const glm::vec3 pointA, const glm::vec3 pointB);
 bool isPointInNegativeSide(const glm::vec3& point, const Plane& plane);
 bool checkCollision(const Cube* cube, const BoundingBox* bbox);
 bool isPointInBox(glm::vec3 point, BoundingBox* const bbox);
-glm::dvec3 calculateSpringForce(const double kh, MassPoint* pointA, MassPoint* pointB);
-glm::dvec3 calculateDampingForce(const double kd, MassPoint* pointA, MassPoint* pointB);
-void computeSpringAcceleration(const double stiffness, const double damping, const double mass, MassPoint* currentPoint);
-void computeAcceleration(const double stiffness, const double damping, const double mass, Cube* cube);
-void euler(Cube* cube);
-void RK4(Cube* cube);
+
 
 #endif

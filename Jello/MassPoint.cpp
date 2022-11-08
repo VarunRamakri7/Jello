@@ -12,7 +12,6 @@ MassPoint::MassPoint(glm::dvec3 position, glm::dvec3 velocity) {
     this->position = position;
     this->initialPos = position;
     this->velocity = velocity;
-    this->surfacePoint = false;
 }
 
 // Set
@@ -21,11 +20,7 @@ void MassPoint::setPosition(glm::dvec3 position) {
 }
 
 void MassPoint::setFixed(bool fixed) {
-    this->isFixed = fixed;
-}
-
-bool MassPoint::getFixed() {
-    return this->isFixed;
+    this->fixed = fixed;
 }
 
 void MassPoint::setVelocity(glm::dvec3 velocity) {
@@ -36,9 +31,14 @@ void MassPoint::setAcceleration(glm::dvec3 acceleration) {
     this->acceleration = acceleration;
 }
 
-bool MassPoint::isSurfacePoint() {
-    return this->surfacePoint;
+void MassPoint::setExternalForce(glm::dvec3 force) {
+    this->externalForce = force;
 }
+
+void MassPoint::addAcceleration(glm::dvec3 acc) {
+    this->acceleration += acc;
+}
+
 
 // Process
 void MassPoint::addConnection(MassPoint* m) {
@@ -48,6 +48,16 @@ void MassPoint::addConnection(MassPoint* m) {
 void MassPoint::clearAllConnections() {
     // TODO is ever used? 
     this->connectedPoints.clear();
+}
+
+// get
+
+bool MassPoint::isSurfacePoint() {
+    return this->surfacePoint;
+}
+
+bool MassPoint::isFixed() {
+    return this->fixed;
 }
 
 int MassPoint::getConnectionCount() {
@@ -65,24 +75,6 @@ glm::dvec3* MassPoint::getAcceleration() {
     return &this->acceleration;
 }
 
-glm::dvec3 MassPoint::getNaturalLengthV(int link)
-{
-    const glm::dvec3* B = this->connectedPoints.at(link)->getInitialPosition();
-    return this->initialPos - *B;
-}
-
-glm::dvec3 MassPoint::getActualLengthV(int link)
-{
-    const glm::dvec3* B = this->connectedPoints.at(link)->getPosition();
-    return this->position - *B;
-}
-
-glm::dvec3 MassPoint::getVelocityDiff(int link)
-{
-    const glm::dvec3* B = this->connectedPoints.at(link)->getVelocity();
-    return this->velocity - *B;
-}
-
 // to do make pointer to constant value 
 glm::dvec3* MassPoint::getInitialPosition()
 {
@@ -94,14 +86,7 @@ glm::dvec3* MassPoint::getExternalForce()
     return &this->externalForce;
 }
 
-void MassPoint::setExternalForce(glm::dvec3 force) {
-    this->externalForce = force;
-}
-
 MassPoint* MassPoint::getConnection(int link) {
     return this->connectedPoints.at(link);
 }
 
-void MassPoint::addAcceleration(glm::dvec3 acc) {
-    this->acceleration += acc;
-}

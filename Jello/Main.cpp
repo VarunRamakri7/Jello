@@ -34,32 +34,26 @@ static const std::string vertex_shader("template_vs.glsl");
 static const std::string fragment_shader("template_fs.glsl");
 GLuint shader_program = -1;
 float time_sec;
-
-static const std::string mesh_name = "Amago0.obj";
-static const std::string texture_name = "AmagoT.bmp";
-
-GLuint texture_id = -1; //Texture map for mesh
-MeshData mesh_data;
-
-float angle = 0.0f;
-float scale = 1.0f;
-float drag = 10.0f;
-glm::vec2 mousePosA;
-float mouseClickTime = 0.0f;
-float mouseReleaseTime = 0.0f;
-glm::vec2 dragV = glm::vec2(0.0);
-glm::vec3 gravity = glm::vec3(0.0, -9.8, 0.0);
 bool recording = false;
 
-
-bool showDiscrete = false;
-bool onPlate = true;
-bool needReset = true;
-
+// interactive
 TrackBallC trackball;
 bool mouseLeft, mouseMid, mouseRight;
 GLdouble mouseX, mouseY;
+glm::vec2 mousePosA;
+float mouseClickTime = 0.0f;
+float mouseReleaseTime = 0.0f;
+glm::vec2 dragV = glm::vec2(0.0); // from mouse interaction
+glm::vec3 gravity = glm::vec3(0.0, -9.8, 0.0);
 
+// display
+bool showDiscrete = false;
+
+// physics
+bool onPlate = true;
+bool needReset = true;
+
+// scene
 Cube* myCube;
 BoundingBox* boundingBox;
 Camera* myCamera;
@@ -103,9 +97,6 @@ void draw_gui(GLFWwindow* window)
          finish_encoding(); //Uses ffmpeg
       }
    }
-
-   ImGui::SliderFloat("View angle", &angle, -glm::pi<float>(), +glm::pi<float>());
-   ImGui::SliderFloat("Scale", &scale, -10.0f, +10.0f);
 
    ImGui::Checkbox("Show discrete", &showDiscrete);
    ImGui::Checkbox("On Plate", &onPlate);
@@ -195,19 +186,10 @@ void display(GLFWwindow* window)
    boundingBox->render(1);
    myCube->render(1, showDiscrete);
    
-   //glActiveTexture(GL_TEXTURE0);
-   //glBindTexture(GL_TEXTURE_2D, texture_id);
-   //int tex_loc = glGetUniformLocation(shader_program, "diffuse_tex");
-   //glUniform1i(tex_loc, 0); // we bound our texture to texture unit 0
-
    //Get location for shader uniform variable
    glm::mat4 PVM = PV *M;
    int PVM_loc = glGetUniformLocation(shader_program, "PVM");
    glUniformMatrix4fv(PVM_loc, 1, false, glm::value_ptr(PVM));
-
-   glBindVertexArray(mesh_data.mVao);
-   //glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
-   //For meshes with multiple submeshes use mesh_data.DrawMesh(); 
 
    draw_gui(window);
 
@@ -319,8 +301,6 @@ void initOpenGL()
    glEnable(GL_DEPTH_TEST);
 
    reload_shader();
-   mesh_data = LoadMesh(mesh_name);
-   texture_id = LoadTexture(texture_name);
 }
 
 
@@ -373,11 +353,12 @@ int main(int argc, char **argv)
    while (!glfwWindowShouldClose(window))
    {
       idle();
-      //myCube->setExternalForce(glm::vec3(dragV, 0.0) ); //+ gravity
-      myCube->setExternalForce(glm::vec3(sin(time_sec), 0.0, 0.0));
-      //myCube->updatePoints(time_sec);
-      euler(myCube);
-      //RK4(myCube);
+      // TO DO add constant external force
+      myCube->setExternalForce(glm::vec3(dragV, 0.0) ); //+ gravity // TODO why gravity + plate makes it go through? 
+      //myCube->setExternalForce(glm::vec3(sin(time_sec), 0.0, 0.0));
+      // TO DO add to reset simulation 
+      //euler(myCube);
+      RK4(myCube);
       display(window);
 
       /* Poll for and process events */
