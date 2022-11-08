@@ -11,32 +11,36 @@
 
 class MassPoint {
 public:
-    MassPoint(glm::vec3 position, bool isSurfacePoint);
+    MassPoint(glm::dvec3 position, bool isSurfacePoint);
+    MassPoint(glm::dvec3 position, glm::dvec3 velocity);
+
     MassPoint(){}; // default constructor 
     ~MassPoint(){};
 
     // Set
-    void setPosition(glm::vec3 position);
-    void setVelocity(glm::vec3 velocity);
-    void setAcceleration(glm::vec3 acceleration);
-    void setExternalForce(glm::vec3 force);
+    void setPosition(glm::dvec3 position);
+    void setVelocity(glm::dvec3 velocity);
+    void setAcceleration(glm::dvec3 acceleration);
+    void setExternalForce(glm::dvec3 force);
     void setFixed(bool fixed);
+    void addAcceleration(glm::dvec3 acc);
 
     // Get
-    const glm::vec3* getPosition();
-    const glm::vec3* getInitialPosition();
-    const glm::vec3* getVelocity();
-    const glm::vec3* getAcceleration();
+    glm::dvec3* getPosition();
+    glm::dvec3* getInitialPosition();
+    glm::dvec3* getVelocity();
+    glm::dvec3* getAcceleration();
+    MassPoint* getConnection(int link);
 
-    const int getConnectionCount();
-    const glm::vec3* getExternalForce();
+    int getConnectionCount();
+    glm::dvec3* getExternalForce();
 
     // Get (Boolean Status)
     bool isSurfacePoint();
     bool getFixed();
-    glm::vec3 getNaturalLengthV(int link);
-    glm::vec3 getActualLengthV(int link);
-    glm::vec3 getVelocityDiff(int link);
+    glm::dvec3 getNaturalLengthV(int link);
+    glm::dvec3 getActualLengthV(int link);
+    glm::dvec3 getVelocityDiff(int link);
 
     // Process
     void addConnection(MassPoint* n);
@@ -45,14 +49,19 @@ public:
 
 private:
     std::vector <MassPoint*> connectedPoints;
-    glm::vec3 initialPos = glm::vec3(0.0);
-    glm::vec3 position = glm::vec3(0.0);
-    glm::vec3 velocity = glm::vec3(0.0);
-    glm::vec3 acceleration = glm::vec3(0.0);
-    glm::vec3 externalForce = glm::vec3(0.0);
+    glm::dvec3 initialPos = glm::dvec3(0.0);
+    glm::dvec3 position = glm::dvec3(0.0);
+    glm::dvec3 velocity = glm::dvec3(0.0);
+    glm::dvec3 acceleration = glm::dvec3(0.0);
+    glm::dvec3 externalForce = glm::dvec3(0.0);
 
     bool isFixed = false;
     bool surfacePoint = false;
+};
+
+// structs are public 
+struct mp {
+
 };
 
 #endif

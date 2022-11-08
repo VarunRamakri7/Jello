@@ -7,32 +7,18 @@ Plane::Plane(glm::vec3 pointA, glm::vec3 pointB, glm::vec3 pointC, glm::vec3 poi
     this->pointB = pointB; // top right
     this->pointC = pointC; // bottom left
     this->pointD = pointD; // bottom right
+    this->pointInPlane = pointA;
+
+    this->normal = glm::normalize(glm::cross(pointD - pointC, pointA - pointC));
 
     this->initArrays();
 }
 
 bool Plane::checkCollision(glm::vec3 point) {
     // check as if plane is 2 triangles 
-    if (pointInTriangle(point, this->pointD, this->pointC, this->pointA) || pointInTriangle(point, this->pointA, this->pointB, this->pointD)) {
+    /*if (pointInTriangle(point, this->pointD, this->pointC, this->pointA) || pointInTriangle(point, this->pointA, this->pointB, this->pointD)) {
         return true;
-    }
-    return false;
-}
-
-bool Plane::pointInTriangle(glm::vec3 point, glm::vec3 triangleA, glm::vec3 triangleB, glm::vec3 triangleC) {
-    if (sameSide(point, triangleA, triangleB, triangleC) && sameSide(point, triangleB, triangleA, triangleC) && sameSide(point, triangleC, triangleA, triangleB)) {
-        return true;
-    }
-    return false;
-}
-
-bool Plane::sameSide(glm::vec3 lineA, glm::vec3 lineB, glm::vec3 pointA, glm::vec3 pointB) {
-    glm::vec3 crossA = glm::cross(pointB - pointA, lineA - pointA);
-    glm::vec3 crossB = glm::cross(pointB - pointA, lineB - pointA);
-
-    if (glm::dot(crossA, crossB) >= 0) {
-        return true;
-    }
+    }*/
     return false;
 }
 

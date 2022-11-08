@@ -20,6 +20,7 @@
 #include "trackball.h"
 #include "BoundingBox.h"
 #include "Camera.h"
+#include "Physics.h"
 
 #include <glm/gtx/string_cast.hpp> // for debug
 
@@ -47,10 +48,13 @@ glm::vec2 mousePosA;
 float mouseClickTime = 0.0f;
 float mouseReleaseTime = 0.0f;
 glm::vec2 dragV = glm::vec2(0.0);
+glm::vec3 gravity = glm::vec3(0.0, -9.8, 0.0);
 bool recording = false;
 
 
 bool showDiscrete = false;
+bool onPlate = true;
+bool needReset = true;
 
 TrackBallC trackball;
 bool mouseLeft, mouseMid, mouseRight;
@@ -104,6 +108,7 @@ void draw_gui(GLFWwindow* window)
    ImGui::SliderFloat("Scale", &scale, -10.0f, +10.0f);
 
    ImGui::Checkbox("Show discrete", &showDiscrete);
+   ImGui::Checkbox("On Plate", &onPlate);
 
    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
    ImGui::End();
@@ -226,7 +231,6 @@ void idle()
 
    if (mouseLeft) {
        // hold
-       std::cout << "press" << std::endl;
 
        // calculate acceleration 
        glm::vec2 changeP = glm::vec2(mouseX, mouseY) - mousePosA;
@@ -235,11 +239,14 @@ void idle()
        if (timeDiff > 0.01) {
            // drag
            dragV = changeP / (timeDiff * timeDiff) * 0.001f;
-           std::cout << dragV.x << " " << dragV.y << " " << std::endl;
        }
 
    }
 
+   if (onPlate != myCube->getFixedFloor()) {
+       // reset simulation
+       myCube->setFixedFloor(onPlate);
+   }
 
    //Pass time_sec value to the shaders
    int time_loc = glGetUniformLocation(shader_program, "time");
@@ -366,8 +373,11 @@ int main(int argc, char **argv)
    while (!glfwWindowShouldClose(window))
    {
       idle();
-      myCube->setExternalForce(glm::vec3(dragV, 0.0));
-      myCube->updatePoints(time_sec);
+      //myCube->setExternalForce(glm::vec3(dragV, 0.0) ); //+ gravity
+      myCube->setExternalForce(glm::vec3(sin(time_sec), 0.0, 0.0));
+      //myCube->updatePoints(time_sec);
+      euler(myCube);
+      //RK4(myCube);
       display(window);
 
       /* Poll for and process events */

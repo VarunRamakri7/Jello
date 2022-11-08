@@ -17,7 +17,14 @@ public:
     BoundingBox(int width, int height, int depth, glm::vec3 topFrontLeft);
     void render(GLuint modelParameter); // TODO add view mode 
 
-private:
+    // TODO make all use glfloat
+    GLfloat minX;
+    GLfloat minY;
+    GLfloat minZ;
+    GLfloat maxX;
+    GLfloat maxY;
+    GLfloat maxZ;
+
     std::vector <Plane*> planes{}; // 6 
 };
 

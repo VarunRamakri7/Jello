@@ -1,5 +1,6 @@
 
 #include "BoundingBox.h"
+#include <iostream>
 
 // width is front, depth is z 
 BoundingBox::BoundingBox(int width, int height, int depth, glm::vec3 topFrontLeft) {
@@ -20,12 +21,14 @@ BoundingBox::BoundingBox(int width, int height, int depth, glm::vec3 topFrontLef
     glm::vec3 p8 = p4; //bottomBackRight
     p8.z = p8.z - depth;
 
+    // normals need to face inwards (because we are inside the box
+    // TODO calculate the normal from camera position // inside outside the box // or objects normal cos we want to collide from both sides
     // front plane 
-    Plane* front = new Plane(p1, p2, p3, p4);
+    Plane* front = new Plane(p2, p1, p4, p3);//Plane(p1, p2, p3, p4);
     // right plane
-    Plane* right = new Plane(p6, p1, p8, p4);
+    Plane* right = new Plane(p6, p2, p8, p4);//Plane(p6, p1, p8, p4);
     // left plane
-    Plane* left = new Plane(p1, p5, p3, p7);
+    Plane* left = new Plane(p1, p5, p3, p7);//Plane(p1, p5, p3, p7);
     // back plane
     Plane* back = new Plane(p5, p6, p7, p8);
     // bottom plane
@@ -39,6 +42,14 @@ BoundingBox::BoundingBox(int width, int height, int depth, glm::vec3 topFrontLef
     planes.push_back(back);
     planes.push_back(bottom);
     planes.push_back(top);
+
+    minX = p1.x; // x of a point in left
+    minY = p7.y; // y of a point in bottom 
+    minZ = p5.z; // z of a point in back 
+    maxX = p6.x; // x of a point in right
+    maxY = p1.y; // y of a point in top
+    maxZ = p2.z; // screen looking into negative z, so max z is front
+  
 }
 
 void BoundingBox::render(GLuint modelParameter) {

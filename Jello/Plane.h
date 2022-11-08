@@ -18,6 +18,9 @@ public:
     void render(GLuint modelParameter); // TODO make class for renderable 
     glm::vec4 getModelCoord();
     glm::mat4 getModelMatrix();
+    const glm::vec3 getPointA();
+    glm::vec3 normal;
+    glm::vec3 pointInPlane;
 
 private:
     glm::vec3 pointA; // top left
@@ -25,9 +28,6 @@ private:
     glm::vec3 pointC; // bottom left
     glm::vec3 pointD; // bottom right
 
-    bool pointInTriangle(glm::vec3 point, glm::vec3 triangleA, glm::vec3 triangleB, glm::vec3 triangleC);
-    bool sameSide(glm::vec3 lineA, glm::vec3 lineB, glm::vec3 pointA, glm::vec3 pointB);
-    
     glm::vec3 position = glm::vec3(0.0f);
     GLuint VBO, VAO;
     std::vector <GLfloat> data{};

@@ -15,7 +15,10 @@
 
 class Cube {
     public:
+
         Cube(int resolution);
+        Cube();
+
         void render(GLuint modelParameter, bool showDiscrete);
         glm::vec4 getModelCoord();
         void getSurface();
@@ -23,9 +26,19 @@ class Cube {
         void setSpringMode(bool structural, bool shear, bool bend);
         void updatePoints(float time);
         void setExternalForce(glm::vec3 force);
+        void setFixedFloor(bool set);
+        bool getFixedFloor();
+        std::vector <MassPoint*>* getMassPoints(); // get constant pointer to the mass points vector 
+        void resetAcceleration();
+        std::vector <MassPoint*> discretePoints{};
+        //physics
+        double stiffness = -50;
+        double damping = -0.5;
+        double mass = 1.0;
+        double timeStep = 0.005;
+        int resolution = 8;
 
     private:
-        int resolution = 8;
         float scale = 1.0f;
         glm::vec3 position = glm::vec3(0.0f);
         GLuint VBO, VAO;
@@ -35,8 +48,13 @@ class Cube {
         glm::mat4 modelMatrix = glm::mat4(1.0f);
         void fillDiscretePoints(bool structural, bool shear, bool bend);
         //MassPoint**** massPointMap; // dynamic array of pointers 
-        std::vector <MassPoint*> discretePoints{};
+        
         //std::vector <MassPoint> surfacePoints{};
+
+        bool structuralSpring;
+        bool shearSpring;
+        bool bendSpring;
+        bool fixedFloor = true;
 
         // unit cube (m)
         const std::vector <glm::vec3> initPoints{
@@ -44,11 +62,8 @@ class Cube {
             glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(0.5f, 0.5f, -0.5f), glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec3(0.5f, 0.5f, 0.5f),
         };
 
-        //physics
-        double stiffness = -50;
-        double damping = -0.5;
-        double mass = 1.0;
-        double timeStep = 0.01;
+        
+        
 };
 
 
