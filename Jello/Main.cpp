@@ -264,8 +264,8 @@ void display(GLFWwindow* window)
     glBindBuffer(GL_UNIFORM_BUFFER, camera_ubo); //Bind the OpenGL UBO before we update the data.
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUniforms), &CameraData); //Upload the new uniform values.
 
-    //DrawHackScene(); // Draw hack transparency scene
-    DrawScene(); // Draw proper transparency scene
+    DrawHackScene(); // Draw hack transparency scene
+    //DrawScene(); // Draw proper transparency scene
 
     if (recording == true)
     {
