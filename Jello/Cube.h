@@ -30,6 +30,7 @@ class Cube {
         // render
         glm::mat4 getModelMatrix();
         void render(GLuint modelParameter, bool showDiscrete);
+        int pointSize = 5;
         
         // physics 
         double stiffness = -50;

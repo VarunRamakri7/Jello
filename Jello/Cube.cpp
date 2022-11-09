@@ -224,7 +224,7 @@ void Cube::render(GLuint modelParameter, bool showDiscrete) {
     // enable point size
     // 
     //glEnable(GL_PROGRAM_POINT_SIZE);
-    glPointSize(5);
+    glPointSize(this->pointSize);
     glDrawArrays(GL_POINTS, 0, this->dataSize / 3); // TODO Really? can i divide 3 again? 
     //glDisable(GL_PROGRAM_POINT_SIZE);
 }

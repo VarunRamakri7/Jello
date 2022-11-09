@@ -244,7 +244,7 @@ glm::dvec3 calculateDampingForce(const double& kd, const glm::dvec3& pointA, con
  * acceleration = dv/dt (change in velocity over change in time)
  * @param Cube* const cube - constant pointer to a cube
  */
-void euler(Cube* const cube) {
+void integrateEuler(Cube* const cube) {
     
     // compute accumulated acceleration of mass points in cube
     computeAcceleration(cube);
@@ -275,7 +275,7 @@ void euler(Cube* const cube) {
  * @param Cube* const cube - constant pointer to a cube
  */
 
-void RK4(Cube* cube) {
+void integrateRK4(Cube* cube) {
     // needs 4 integration for both point and velocity 
     // approximate differential equations
 

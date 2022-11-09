@@ -32,14 +32,14 @@ void computeSpringAcceleration(const double& stiffness, const double& damping, c
 void computeAcceleration(Cube* cube);
 
 // integrators
-void euler(Cube* cube);
-void RK4(Cube* cube);
+void integrateEuler(Cube* cube);
+void integrateRK4(Cube* cube);
 
 // collision
 bool isPointInTriangle(const glm::vec3 point, const glm::vec3 triangleA, const glm::vec3 triangleB, const glm::vec3 triangleC);
 bool isSameSide(const glm::vec3 lineA, const glm::vec3 lineB, const glm::vec3 pointA, const glm::vec3 pointB);
 bool isPointInNegativeSide(const glm::dvec3& point, const Plane& plane);
-bool checkCollision(Cube* const cube, BoundingBox* const bbox, std::vector<collisionPoint>& collisionPoints);
+bool checkCollision(MassPoint* massPoint, BoundingBox* const bbox, std::vector<collisionPoint>& collisionPoints);
 void processCollisionResponse(Cube* const cube, std::vector<collisionPoint>& collisionPoints);
 bool isPointInBox(glm::dvec3* const point, BoundingBox* const bbox);
 
