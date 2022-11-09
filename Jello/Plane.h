@@ -18,11 +18,11 @@ class Plane {
         // render
         void render(GLuint modelParameter); // TODO make class for renderable 
         glm::mat4 getModelMatrix();
-        glm::vec3 normal;
+        glm::dvec3 normal;
 
         // physics
         bool checkCollision(glm::vec3 point);
-        glm::vec3 pointInPlane;
+        glm::dvec3 pointInPlane;
 
     private:
         glm::vec3 pointA; // top left

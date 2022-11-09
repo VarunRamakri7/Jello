@@ -50,6 +50,14 @@ BoundingBox::BoundingBox(int width, int height, int depth, glm::vec3 topFrontLef
     maxY = p1.y; // y of a point in top
     maxZ = p2.z; // screen looking into negative z, so max z is front
   
+    std::cout << "minX: " << minX  <<std::endl;
+    std::cout << "minY: " << minY << std::endl;
+    std::cout << "minZ: " << minZ << std::endl;
+    std::cout << "maxX: " << maxX << std::endl;
+    std::cout << "maxY: " << maxY << std::endl;
+    std::cout << "maxZ: " << maxZ << std::endl;
+
+    // is it in diff spaces? 
 }
 
 void BoundingBox::render(GLuint modelParameter) {

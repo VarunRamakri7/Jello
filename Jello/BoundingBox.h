@@ -18,12 +18,12 @@ class BoundingBox {
         void render(GLuint modelParameter); // TODO add view mode 
 
         // TODO make all use glfloat
-        GLfloat minX;
-        GLfloat minY;
-        GLfloat minZ;
-        GLfloat maxX;
-        GLfloat maxY;
-        GLfloat maxZ;
+        double minX;
+        double minY;
+        double minZ;
+        double maxX;
+        double maxY;
+        double maxZ;
 
         std::vector <Plane*> planes{}; // 6 
 };

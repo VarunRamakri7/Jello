@@ -51,13 +51,13 @@ bool showDiscrete = false;
 
 // physics
 bool onPlate = true;
-bool needReset = true;
 
 // scene
 Cube* myCube;
 BoundingBox* boundingBox;
 Camera* myCamera;
 const glm::vec3 cameraInitPos = glm::vec3(0.0f, 0.0f, 5.0f);
+std::vector<BoundingBox*> sceneObjs;
 
 void draw_gui(GLFWwindow* window)
 {
@@ -341,7 +341,8 @@ int main(int argc, char **argv)
    myCamera->setPosition(cameraInitPos);
    myCube = new Cube(8);
    myCube->setSpringMode(true, true, true);
-   boundingBox = new BoundingBox(init_window_width, init_window_height, init_window_width, glm::vec3(-init_window_width/2, init_window_height / 2, 5.0f));
+   boundingBox = new BoundingBox(5,5,5, glm::vec3(-2, 2, 2.0f));
+   sceneObjs.push_back(boundingBox);
    
    //Init ImGui
    IMGUI_CHECKVERSION();
@@ -354,7 +355,9 @@ int main(int argc, char **argv)
    {
       idle();
       // TO DO add constant external force
-      myCube->setExternalForce(glm::vec3(dragV, 0.0) ); //+ gravity // TODO why gravity + plate makes it go through? 
+      
+      
+      myCube->setExternalForce(glm::vec3(dragV, 0.0) + gravity); // // TODO why gravity + plate makes it go through? 
       //myCube->setExternalForce(glm::vec3(sin(time_sec), 0.0, 0.0));
       // TO DO add to reset simulation 
       //euler(myCube);

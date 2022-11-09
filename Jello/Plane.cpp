@@ -32,8 +32,9 @@ void Plane::render(GLuint modelParameter) {
     // 
     //glEnable(GL_PROGRAM_POINT_SIZE);
     glPointSize(5);
-    glDrawArrays(GL_POINTS, 0, this->dataSize / 3); // TODO Really? can i divide 3 again? 
-    //glDisable(GL_PROGRAM_POINT_SIZE);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, this->dataSize / 3); // TODO Really? can i divide 3 again? 
+    //glDisable(GL_PROGRAM_POINT_SIZE)
 };
 
 

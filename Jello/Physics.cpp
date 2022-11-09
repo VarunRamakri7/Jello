@@ -28,7 +28,7 @@ bool isSameSide(glm::vec3 lineA, glm::vec3 lineB, glm::vec3 pointA, glm::vec3 po
     return false;
 }
 
-bool isPointInNegativeSide(const glm::vec3& point, const Plane& plane){
+bool isPointInNegativeSide(const glm::dvec3& point, const Plane& plane){
 
     // ax + by + cz - (ax1 + by1+ cz1) = 0
     // (normal . point) - (normal . pointinplane) = 0
@@ -37,31 +37,95 @@ bool isPointInNegativeSide(const glm::vec3& point, const Plane& plane){
     return glm::dot(plane.normal, point) - glm::dot(plane.normal, plane.pointInPlane) < 0;
 }
 
-bool isPointInBox(const glm::vec3 point, BoundingBox* const bbox) {
-    return ((point.x >= bbox->minX && point.x <= bbox->maxX)
-        && (point.y >= bbox->minY && point.y <= bbox->maxY)
-        && (point.z >= bbox->minZ && point.z <= bbox->maxZ));
+bool isPointInBox(glm::dvec3* const point, BoundingBox* const bbox) {
+    return ((point->x >= bbox->minX && point->x <= bbox->maxX)
+        && (point->y >= bbox->minY && point->y <= bbox->maxY)
+        && (point->z >= bbox->minZ && point->z <= bbox->maxZ));
 }
 
-bool checkCollision(Cube* const cube, BoundingBox* const bbox) {
+/**
+ * compute the closest point from plane to a point
+ * @param pt - point
+ * @param pl - plane
+ * @return closest point to point in plane
+ */
+// NOTE THIS WILL ONLY WORK FOR BOUDNING BOX AND NOT OTHER CUBES INSIDE THE BOX
+// BECAUSE THERES NO BOUNDARIES< ONLY CHECKING IF INSIDE
+glm::dvec3 computeClosestPoint(const glm::dvec3& point, Plane plane)
+{
+    // TO DO define the point and vectors as glm::dvec3? 
+
+    // get normal
+
+    // create a ray with origin at pt, with -n direction and parameter t: r = pt - nt
+    // compute t when ray intersect with plane ax + by + cz + d = 0
+    // t = (<n,pt>+d)/<n,n>
+    double length2 = glm::dot(plane.normal, plane.normal); // length2
+    double dot0 = glm::dot(plane.normal, point);
+
+    double t = (dot0 + glm::dot(plane.normal, plane.pointInPlane)) / length2;
+
+    // insert t back into ray equation we get intersection point : p1 = pt - tn
+    return plane.normal * (-t) + point;
+}
+
+bool checkCollision(MassPoint* massPoint, BoundingBox* const bbox, std::vector<collisionPoint> &collisionPoints) {
     // for mass points in cube, check if in boundingbox
     // if not inside, check if colliding 
-    for (int i = 0; i < cube->discretePoints.size(); i++) {
-        MassPoint* massPoint = cube->discretePoints[i];
-        const glm::dvec3* pos = massPoint->getPosition();
-        if (isPointInBox(*pos, bbox)) {
-            // collide 
-            // each plane in box, check for collision
-            for (int p = 0; p < 6; p++) {
-                if (isPointInNegativeSide(*pos, *bbox->planes[p])) {
-                    // find intersection point in plane 
-                    std::cout << "collide!" << std::endl;
-                    return true;
-                }
+
+    glm::dvec3* const pos = massPoint->getPosition(); // already world space
+    //glm::dvec4 p = glm::dvec4(*pos, 1.0) * cube->getModelMatrix();
+    //if (i == 0) {
+    //    //std::cout << "P :" << p.x << ", " << p.y << ", " << p.z << std::endl;
+    //    //std::cout << "P :" << pos->x << ", "<< pos->y << ", " << pos->z << std::endl;
+    //    if (isPointInBox(pos, bbox)) {
+    //        //std::cout << "P in " << std::endl;
+    //    }
+    //    else {
+    //        //std::cout << "P out " << std::endl;
+    //    }
+    //}
+    if (!isPointInBox(pos, bbox)) {
+        // collide 
+        // each plane in box, check for collision
+        //std::cout << "out!" << std::endl;
+        for (int p = 0; p < 6; p++) {
+            if (isPointInNegativeSide(*pos, *bbox->planes[p])) {
+                // find intersection point in plane 
+                //std::cout << "collide!" << std::endl;
+
+                // store mass point, closest point of collision, list of collision springs to process 
+                struct collisionPoint cp;
+                cp.closestPoint = computeClosestPoint(*pos, *bbox->planes[p]);
+                cp.mp = massPoint;
+                collisionPoints.push_back(cp);
+                // process for all corners that maybe intersecting, so maybe it'll work 
             }
         }
     }
-    return false;
+    
+    return collisionPoints.size() != 0;
+}
+
+void processCollisionResponse(Cube* const cube, std::vector<collisionPoint>& collisionPoints) {
+    if (collisionPoints.size() == 0) // no collision
+        return;
+
+    // create a spring for each collision
+
+    // compute acceleration for each collision
+    for (const auto& s : collisionPoints)
+    {
+
+        // compute elastic force and damping
+        // TODO collosion has different stiffness and damping value 
+        glm::dvec3 springForce = calculateSpringForce(cube->stiffness , *(s.mp->getPosition()), s.closestPoint, 0.0);
+        glm::dvec3 dampingForce = calculateDampingForce(cube->damping * 50.0, *(s.mp->getPosition()), s.closestPoint, *(s.mp->getVelocity()), glm::dvec3(0.0));
+
+        // F = ma -> a = F / m 
+        // update force on current mass point that collided
+        s.mp->addAcceleration((springForce + dampingForce) / cube->mass);
+    }
 }
 
 
@@ -74,7 +138,7 @@ bool checkCollision(Cube* const cube, BoundingBox* const bbox) {
  * @param const double* const  mass - vertex B of triangle
  * @param MassPoint* const currentPoint - constant pointer to current MassPoint
  */
-void computeSpringAcceleration(const double* const stiffness, const double* const damping, const double* const mass, MassPoint* const currentPoint) {
+void computeSpringAcceleration(const double& stiffness, const double& damping, const double& mass, MassPoint* const currentPoint) {
     // gets all connected masspoints (depends on the spring types enabled)
     for (int c = 0; c < currentPoint->getConnectionCount(); c++) {
         MassPoint* pointB = currentPoint->getConnection(c);
@@ -85,9 +149,9 @@ void computeSpringAcceleration(const double* const stiffness, const double* cons
         
         // F = ma -> a = F / m 
         // update force on current mass point
-        currentPoint->addAcceleration(force / *mass);
+        currentPoint->addAcceleration(force / mass);
         // update opposite forces on B 
-        pointB->addAcceleration(-force / *mass);
+        pointB->addAcceleration(-force / mass);
     }
 }
 
@@ -96,21 +160,32 @@ void computeSpringAcceleration(const double* const stiffness, const double* cons
  * @param Cube* cube
  */
 void computeAcceleration(Cube* cube) {
+    // TODO pass in list of objects in scene or use as extern variable 
     // reset accumulated acceleration to 0
     cube->resetAcceleration();
-    
+
+    std::vector<collisionPoint> collisionPoints;
+
     // goes through all masspoints
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
 
         // calculate spring acceleration for each mass points
-        computeSpringAcceleration(&cube->stiffness, &cube->damping, &cube->mass, currentPoint);
+        computeSpringAcceleration(cube->stiffness, cube->damping, cube->mass, currentPoint);
+
+        // check if each point collides with any objects in the scene
+        for (const auto& s : sceneObjs) {
+            checkCollision(currentPoint, s, collisionPoints);
+        }
 
         // external forces
         // TODO  division is expensive? 
         glm::dvec3 externalAcc = (*currentPoint->getExternalForce()) / cube->mass;
         currentPoint->addAcceleration(externalAcc);
     }
+
+    // compute force from collision as response
+    processCollisionResponse(cube, collisionPoints);
 }
 
 /**
@@ -120,15 +195,26 @@ void computeAcceleration(Cube* cube) {
  * @param MassPoint* pointB - neighboring mass point
  * @return glm::dvec3 - spring force
  */
-glm::dvec3 calculateSpringForce(const double* const kh, MassPoint* pointA, MassPoint* pointB) {
+glm::dvec3 calculateSpringForce(const double& const kh, MassPoint* pointA, MassPoint* pointB) {
     // F = kh * (|L| - R) * (L / |L|)
     // vector from start to end = end - start
     glm::dvec3 L = *(pointA->getPosition()) - *(pointB->getPosition()); // vector from current neighbor (pointB) to point (pointA)
     double currentLength = glm::length(L);
     double restLength = glm::length(*(pointA->getInitialPosition()) - *(pointB->getInitialPosition()));
 
-    return *kh * (currentLength - restLength) * (L / currentLength);
+    return calculateSpringForce(kh, *(pointA->getPosition()), *(pointB->getPosition()), restLength);
 }
+glm::dvec3 calculateSpringForce(const double& kh, const glm::dvec3& pointA, const glm::dvec3& pointB, const double restLength) {
+    // F = kh * (|L| - R) * (L / |L|)
+    // vector from start to end = end - start
+
+    glm::dvec3 L = pointA - pointB; // vector from current neighbor (pointB) to point (pointA)
+    double currentLength = glm::length(L);
+    //double restLength = glm::length(*(pointA->getInitialPosition()) - *(pointB->getInitialPosition()));
+
+    return kh * (currentLength - restLength) * (L / currentLength);
+}
+
 
 /**
  * computes damping force in 3D 
@@ -137,15 +223,17 @@ glm::dvec3 calculateSpringForce(const double* const kh, MassPoint* pointA, MassP
  * @param MassPoint* pointB - neighboring mass point
  * @return glm::dvec3 - damping force
  */
-glm::dvec3 calculateDampingForce(const double* const kd, MassPoint* const pointA, MassPoint* const pointB) {
-    // F = kd * ((Va - Vb) dot L ) / |L| * (L / |L|)
-    glm::dvec3 L = *pointA->getPosition() - *pointB->getPosition(); // vector from current neighbor (pointB) to point (pointA)
-    double lengthL = glm::length(L); // current distance between pointA and pointB
-    glm::dvec3 velocityDiff = *pointA->getVelocity() - *pointB->getVelocity();
-
-    return *kd * (glm::dot(velocityDiff, L) / lengthL) * (L / lengthL);
+glm::dvec3 calculateDampingForce(const double& const kd, MassPoint* const pointA, MassPoint* const pointB) {
+    return calculateDampingForce(kd, *(pointA->getPosition()), *(pointB->getPosition()), *(pointA->getVelocity()), *(pointB->getVelocity()));
 }
+glm::dvec3 calculateDampingForce(const double& kd, const glm::dvec3& pointA, const glm::dvec3& pointB, const glm::dvec3& velA, const glm::dvec3& velB) {
+    // F = kd * ((Va - Vb) dot L ) / |L| * (L / |L|)
+    glm::dvec3 L = pointA - pointB; // vector from current neighbor (pointB) to point (pointA)
+    double lengthL = glm::length(L); // current distance between pointA and pointB
+    glm::dvec3 velocityDiff = velA - velB;
 
+    return kd * (glm::dot(velocityDiff, L) / lengthL) * (L / lengthL);
+}
 
 // INTEGRATORS - numerical solution to analytical problems
 
