@@ -57,10 +57,9 @@ void main(void)
         case 1: // Render mesh back faces and store eye-space depth
             if(!gl_FrontFacing)
             {
-                // Store eye-space depth
-                depthVal = vec4(inData.depth.z);
+                depthVal = vec4(inData.depth.z); // Store eye-space depth
 
-                fragcolor = vec4(0.85f, 0.25f, 0.25f, 1.0f);
+                fragcolor = vec4(0.85f, 0.25f, 0.25f, 1.0f); // Display solid color temporarily
             }
             else
             {
@@ -78,7 +77,7 @@ void main(void)
 
                 // Compute Beer's Law for final color
 
-                //fragcolor = vec4(0.25f, 0.25f, 0.85f, 1.0f);
+                fragcolor = vec4(0.25f, 0.25f, 0.85f, 1.0f); // Display solid color temporarily
             }
             else
             {

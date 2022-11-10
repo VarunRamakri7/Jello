@@ -179,7 +179,7 @@ void draw_gui(GLFWwindow* window)
 }
 
 /// <summary>
-/// Draw hack transperancy scene
+/// Draw transparent scene without FBO
 /// </summary>
 void DrawHackScene()
 {
@@ -198,7 +198,7 @@ void DrawHackScene()
 }
 
 /// <summary>
-/// Draw actual scene
+/// Draw transparent scene with FBO
 /// </summary>
 void DrawScene()
 {
@@ -264,8 +264,8 @@ void display(GLFWwindow* window)
     glBindBuffer(GL_UNIFORM_BUFFER, camera_ubo); //Bind the OpenGL UBO before we update the data.
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUniforms), &CameraData); //Upload the new uniform values.
 
-    DrawHackScene(); // Draw hack transparency scene
-    //DrawScene(); // Draw proper transparency scene
+    //DrawHackScene(); // Draw hack transparency scene
+    DrawScene(); // Draw proper transparency scene
 
     if (recording == true)
     {
