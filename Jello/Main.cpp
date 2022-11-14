@@ -57,8 +57,8 @@ enum integratorEnum {
     EULER, RK4
 }; // euler = 0 , RK4 = 1
 int integrator = integratorEnum::EULER;
-float fStiffness = -50.f;
-float fDamping = -0.5f;
+float fStiffness = 50.f;
+float fDamping = 0.5f;
 float fMass = 1.0f;
 float fTimeStep = 0.005f;
 bool needReset = false;
