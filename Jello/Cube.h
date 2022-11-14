@@ -23,21 +23,25 @@ class Cube {
         
         // setup
         void setSpringMode(bool structural, bool shear, bool bend);
-        void setFixedFloor(bool set);
-
-        bool getFixedFloor();
+        void reset();
 
         // render
         glm::mat4 getModelMatrix();
         void render(GLuint modelParameter, bool showDiscrete);
         int pointSize = 5;
+        bool showSpring = false;
         
         // physics 
         double stiffness = -50;
         double damping = -0.5;
         double mass = 1.0;
         double timeStep = 0.005;
-        int resolution = 8;
+        int resolution = 1;
+
+        bool structuralSpring;
+        bool shearSpring;
+        bool bendSpring;
+        bool fixedFloor = true;
 
         std::vector <MassPoint*> discretePoints{};
 
@@ -55,12 +59,6 @@ class Cube {
         glm::mat4 modelMatrix = glm::mat4(1.0f);
 
         void initArrays();
-        
-        // physics
-        bool structuralSpring;
-        bool shearSpring;
-        bool bendSpring;
-        bool fixedFloor = true;
 
         void fillDiscretePoints(bool structural, bool shear, bool bend);
 

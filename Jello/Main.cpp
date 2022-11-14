@@ -52,16 +52,21 @@ bool showDiscrete = false;
 bool showBB = true;
 
 // physics
-bool onPlate = true;
 bool addGravity = false;
 enum integratorEnum {
     EULER, RK4
 }; // euler = 0 , RK4 = 1
 int integrator = integratorEnum::EULER;
+float fStiffness = -50.f;
+float fDamping = -0.5f;
+float fMass = 1.0f;
+float fTimeStep = 0.005f;
+bool needReset = false;
 
 // scene
 Cube* myCube;
 BoundingBox* boundingBox;
+Plane* plate;
 Camera* myCamera;
 const glm::vec3 cameraInitPos = glm::vec3(0.0f, 0.0f, 5.0f);
 std::vector<BoundingBox*> sceneObjs;
@@ -108,7 +113,19 @@ void draw_gui(GLFWwindow* window)
    ImGui::Checkbox("Show discrete", &showDiscrete);
    ImGui::Checkbox("Show bounding box", &showBB);
    ImGui::SliderInt("Particle Size", &myCube->pointSize, 1, 5);
-   ImGui::Checkbox("On Plate", &onPlate);
+   ImGui::SliderInt("Jello Resolution", &myCube->resolution, 1, 8);
+   ImGui::SliderFloat("Stiffness", &fStiffness, 0.0f, 100.0f);
+   ImGui::SliderFloat("Damping", &fDamping, 0.0, 1.0f);
+   ImGui::SliderFloat("Mass", &fMass, 0.0f, 50.0f);
+   ImGui::SliderFloat("TimeStep", &fTimeStep, 0.001, 0.01);
+   needReset = ImGui::Button("Reset");
+   //add reset and resolution
+   // then debug the 4 squares  
+   ImGui::Checkbox("On Plate", &myCube->fixedFloor);
+   ImGui::Checkbox("Structural Spring", &myCube->fixedFloor);
+   ImGui::Checkbox("Shear Spring", &myCube->shearSpring);
+   ImGui::Checkbox("Bend Spring", &myCube->bendSpring);
+   ImGui::Checkbox("Visualize Springs", &myCube->showSpring);
    ImGui::Checkbox("Add Gravity", &addGravity);
    ImGui::RadioButton("Euler", &integrator, integratorEnum::EULER);
    ImGui::RadioButton("RK4", &integrator, integratorEnum::RK4);
@@ -199,6 +216,7 @@ void MouseButtonCallback(GLFWwindow* window, int button, int state, int mods) {
 // This function gets called every time the scene gets redisplayed
 void display(GLFWwindow* window)
 {
+
    //Clear the screen to the color previously specified in the glClearColor(...) call.
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -213,7 +231,8 @@ void display(GLFWwindow* window)
        boundingBox->render(1);
    }
    myCube->render(1, showDiscrete);
-   
+   //plate->render(1);
+
    //Get location for shader uniform variable
    glm::mat4 PVM = PV *M;
    int PVM_loc = glGetUniformLocation(shader_program, "PVM");
@@ -254,9 +273,18 @@ void idle()
 
    }
 
-   if (onPlate != myCube->getFixedFloor()) {
+   if (needReset) {
        // reset simulation
-       myCube->setFixedFloor(onPlate);
+
+       // send cube values
+       myCube->stiffness = (-1.0) * double(fStiffness); // negate
+       myCube->damping = (-1.0) * double(fDamping); // negate
+       myCube->mass = double(fMass);
+       myCube->timeStep = double(fTimeStep);
+
+       myCube->reset();
+       // TODO Add the spring modes
+
    }
 
    //Pass time_sec value to the shaders
@@ -380,7 +408,7 @@ int main(int argc, char **argv)
    initOpenGL();
    myCamera = new Camera();
    myCamera->setPosition(cameraInitPos);
-   myCube = new Cube(8);
+   myCube = new Cube(2);
    myCube->setSpringMode(true, true, true);
    boundingBox = new BoundingBox(5,5,5, glm::vec3(-2, 2, 2.0f));
    sceneObjs.push_back(boundingBox);

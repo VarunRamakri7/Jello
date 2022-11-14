@@ -20,13 +20,8 @@ glm::mat4 Cube::getModelMatrix() {
     return this->modelMatrix;
 }
 
-void Cube::setFixedFloor(bool set) {
-    this->fixedFloor = set;
-    setSpringMode(this->structuralSpring, this->structuralSpring, this->structuralSpring);
-}
-
-bool Cube::getFixedFloor() {
-    return this->fixedFloor;
+void Cube::reset() {
+    setSpringMode(this->structuralSpring, this->shearSpring, this->bendSpring);
 }
 
 void Cube::fillDiscretePoints(bool structural, bool shear, bool bend) {
@@ -221,12 +216,70 @@ void Cube::render(GLuint modelParameter, bool showDiscrete) {
     //glUniformMatrix4fv(modelParameter, 1, GL_FALSE, glm::value_ptr(this->modelMatrix));
 
     this->data.clear();
-    // enable point size
-    // 
+    // enable point size to have it accessible in shader
     //glEnable(GL_PROGRAM_POINT_SIZE);
     glPointSize(this->pointSize);
     glDrawArrays(GL_POINTS, 0, this->dataSize / 3); // TODO Really? can i divide 3 again? 
     //glDisable(GL_PROGRAM_POINT_SIZE);
+
+    if (showSpring) {
+        // show springs
+        for (int i = 0; i < this->discretePoints.size(); i++) {
+            MassPoint* massPoint = discretePoints[i];
+            const glm::dvec3* pos = massPoint->getPosition();
+
+            if (showDiscrete) {
+
+                const int cc = massPoint->getConnectionCount();
+                for (int c = 0; c < cc; c++) {
+                    MassPoint* connection = massPoint->getConnection(c);
+
+                    this->data.push_back(pos->x);
+                    this->data.push_back(pos->y);
+                    this->data.push_back(pos->z);
+
+                    const glm::dvec3* cpos = connection->getPosition();
+
+                    this->data.push_back(cpos->x);
+                    this->data.push_back(cpos->y);
+                    this->data.push_back(cpos->z);
+                }
+
+            }
+            else {
+                // only show surface
+                if (massPoint->isSurfacePoint()) {
+
+                    const int cc = massPoint->getConnectionCount();
+                    for (int c = 0; c < cc; c++) {
+                        MassPoint* connection = massPoint->getConnection(c);
+
+                        if (connection->isSurfacePoint()) {
+
+                            this->data.push_back(pos->x);
+                            this->data.push_back(pos->y);
+                            this->data.push_back(pos->z);
+
+                            const glm::dvec3* cpos = connection->getPosition();
+
+                            this->data.push_back(cpos->x);
+                            this->data.push_back(cpos->y);
+                            this->data.push_back(cpos->z);
+                        }
+                    }
+                }
+            }
+            this->dataSize = int(this->data.size());
+            glBufferData(GL_ARRAY_BUFFER, this->dataSize * sizeof(GLfloat), this->data.data(), GL_DYNAMIC_DRAW);
+        }
+        //glUniformMatrix4fv(modelParameter, 1, GL_FALSE, glm::value_ptr(this->modelMatrix));
+
+        this->data.clear();
+        // enable point size to have it accessible in shader
+        //glEnable(GL_PROGRAM_POINT_SIZE);
+        glPointSize(this->pointSize);
+        glDrawArrays(GL_LINES, 0, this->dataSize / 3); // TODO Really? can i divide 3 again? 
+    }
 }
 
 void Cube::initArrays() {
