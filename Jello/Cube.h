@@ -61,6 +61,7 @@ class Cube {
         void initArrays();
 
         void fillDiscretePoints(bool structural, bool shear, bool bend);
+        void addConnection(MassPoint**** massPointMap, MassPoint* point, int i, int j, int k);
 
         // unit cube (m)
         const std::vector <glm::vec3> initPoints{

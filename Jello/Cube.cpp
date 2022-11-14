@@ -24,7 +24,14 @@ void Cube::reset() {
     setSpringMode(this->structuralSpring, this->shearSpring, this->bendSpring);
 }
 
+void Cube::addConnection(MassPoint **** massPointMap, MassPoint* point, int i, int j, int k) {
+    if (i < resolution && j < resolution && k < resolution && i >= 0 && j >= 0 && k >= 0) {
+        point->addConnection(massPointMap[i][j][k]);
+    }
+}
+
 void Cube::fillDiscretePoints(bool structural, bool shear, bool bend) {
+
     const int maxRes = this->resolution > 1 ? this->resolution - 1 : 1;
     // center is not center
     if (this->resolution == 1) {
@@ -68,99 +75,53 @@ void Cube::fillDiscretePoints(bool structural, bool shear, bool bend) {
             }
         }
     }
+    for (int i = 0; i < this->resolution; i++) {
+        for (int j = 0; j < this->resolution; j++) {
+            for (int k = 0; k < this->resolution; k++) {
+                MassPoint* point = massPointMap[i][j][k];
 
-    // add connections
-    // these are diff connections anyways, so dont need to check for redundancy
-    if (structural) {
-        /*Node(i, j, k) connected to
-            (i + 1, j, k), (i - 1, j, k), (i, j - 1, k), (i, j + 1, k), (i, j, k - 1), (i, j, k + 1)
-            (for surface nodes, some of these neighbors might not exists)*/
+                if (structural) {
+                    /*Node(i, j, k) connected to
+                        (i + 1, j, k), (i - 1, j, k), (i, j - 1, k), (i, j + 1, k), (i, j, k - 1), (i, j, k + 1)
+                        (for surface nodes, some of these neighbors might not exists)*/
 
-        for (int i = 0; i < this->resolution; i++) {
-            for (int j = 0; j < this->resolution; j++) {
-                for (int k = 0; k < this->resolution; k++) {
-                    MassPoint* point = massPointMap[i][j][k];
-                    if ((i + 1) < resolution) {
-                        point->addConnection(massPointMap[i + 1][j][k]);
-                    }
-                    if ((i - 1) >= 0) {
-                        point->addConnection(massPointMap[i - 1][j][k]);
-                    }
-                    if ((j - 1) >= 0) {
-                        point->addConnection(massPointMap[i][j - 1][k]);
-                    }
-                    if ((j + 1) < resolution) {
-                        point->addConnection(massPointMap[i][j + 1][k]);
-                    }
-                    if ((k - 1) >= 0) {
-                        point->addConnection(massPointMap[i][j][k - 1]);
-                    }
-                    if ((k + 1) < resolution) {
-                        point->addConnection(massPointMap[i][j][k + 1]);
-                    }
+                    addConnection(massPointMap, point, i + 1, j, k);
+                    addConnection(massPointMap, point, i, j + 1, k);
+                    addConnection(massPointMap, point, i, j, k + 1);
+                    
+                }
+
+                if (shear) {
+                    // Every node connected to its diagonal neighbors
+
+                    addConnection(massPointMap, point, i + 1, j + 1, k);
+                    addConnection(massPointMap, point, i - 1, j + 1, k);
+                    addConnection(massPointMap, point, i, j + 1, k + 1);
+
+                    addConnection(massPointMap, point, i, j - 1, k + 1);
+                    addConnection(massPointMap, point, i + 1, j, k + 1);
+                    addConnection(massPointMap, point, i - 1, j, k + 1);
+
+                    addConnection(massPointMap, point, i + 1, j + 1, k + 1);
+                    addConnection(massPointMap, point, i - 1, j + 1, k + 1);
+                    addConnection(massPointMap, point, i - 1, j - 1, k + 1);
+                    addConnection(massPointMap, point, i + 1, j - 1, k + 1);
+                }
+
+                if (bend) {
+                    // Every node connected to its second neighbor in every direction
+                    // (6 connections per node, unless surface node)
+
+                    addConnection(massPointMap, point, i + 2, j, k);
+                    addConnection(massPointMap, point, i, j + 2, k);
+                    addConnection(massPointMap, point, i, j, k + 2);
 
                 }
+
             }
         }
     }
-    if (shear) {
-        // Every node connected to its diagonal neighbors
-        for (int i = 0; i < this->resolution; i++) {
-            for (int j = 0; j < this->resolution; j++) {
-                for (int k = 0; k < this->resolution; k++) {
-                    MassPoint* point = massPointMap[i][j][k];
-                    if ((i + 1) < this->resolution && (j + 1) < this->resolution) {
-                        point->addConnection(massPointMap[i + 1][j + 1][k]);
-                    }
-                    if ((i + 1) < this->resolution && (k + 1) < this->resolution) {
-                        point->addConnection(massPointMap[i + 1][j][k + 1]);
-                    }
-                    if ((j + 1) < this->resolution && (k + 1) < this->resolution) {
-                        point->addConnection(massPointMap[i][j + 1][k + 1]);
-                    }
-                    if ((i - 1) >= 0 && (j - 1) >= 0) {
-                        point->addConnection(massPointMap[i - 1][j - 1][k]);
-                    }
-                    if ((k - 1) >= 0 && (j - 1) >= 0) {
-                        point->addConnection(massPointMap[i][j - 1][k - 1]);
-                    }
-                    if ((i - 1) >= 0 && (k - 1) >= 0) {
-                        point->addConnection(massPointMap[i - 1][j][k - 1]);
-                    }
-
-                }
-            }
-        }
-    }
-    if (bend) {
-        // Every node connected to its second neighbor in every direction
-        // (6 connections per node, unless surface node)
-        for (int i = 0; i < this->resolution; i++) {
-            for (int j = 0; j < this->resolution; j++) {
-                for (int k = 0; k < this->resolution; k++) {
-                    MassPoint* point = massPointMap[i][j][k];
-                    if ((i + 2) < resolution) {
-                        point->addConnection(massPointMap[i + 2][j][k]);
-                    }
-                    if ((i - 2) >= 0) {
-                        point->addConnection(massPointMap[i - 2][j][k]);
-                    }
-                    if ((j - 2) >= 0) {
-                        point->addConnection(massPointMap[i][j - 2][k]);
-                    }
-                    if ((j + 2) < resolution) {
-                        point->addConnection(massPointMap[i][j + 2][k]);
-                    }
-                    if ((k - 2) >= 0) {
-                        point->addConnection(massPointMap[i][j][k - 2]);
-                    }
-                    if ((k + 2) < resolution) {
-                        point->addConnection(massPointMap[i][j][k + 2]);
-                    }
-                }
-            }
-        }
-    }
+    
 }
 
 

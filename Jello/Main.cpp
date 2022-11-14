@@ -112,7 +112,7 @@ void draw_gui(GLFWwindow* window)
 
    ImGui::Checkbox("Show discrete", &showDiscrete);
    ImGui::Checkbox("Show bounding box", &showBB);
-   ImGui::SliderInt("Particle Size", &myCube->pointSize, 1, 5);
+   ImGui::SliderInt("Particle Size", &myCube->pointSize, 1, 10);
    ImGui::SliderInt("Jello Resolution", &myCube->resolution, 1, 8);
    ImGui::SliderFloat("Stiffness", &fStiffness, 0.0f, 100.0f);
    ImGui::SliderFloat("Damping", &fDamping, 0.0, 1.0f);
@@ -122,7 +122,7 @@ void draw_gui(GLFWwindow* window)
    //add reset and resolution
    // then debug the 4 squares  
    ImGui::Checkbox("On Plate", &myCube->fixedFloor);
-   ImGui::Checkbox("Structural Spring", &myCube->fixedFloor);
+   ImGui::Checkbox("Structural Spring", &myCube->structuralSpring);
    ImGui::Checkbox("Shear Spring", &myCube->shearSpring);
    ImGui::Checkbox("Bend Spring", &myCube->bendSpring);
    ImGui::Checkbox("Visualize Springs", &myCube->showSpring);
@@ -216,7 +216,6 @@ void MouseButtonCallback(GLFWwindow* window, int button, int state, int mods) {
 // This function gets called every time the scene gets redisplayed
 void display(GLFWwindow* window)
 {
-
    //Clear the screen to the color previously specified in the glClearColor(...) call.
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
