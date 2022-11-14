@@ -250,9 +250,10 @@ void integrateEuler(Cube* const cube) {
     computeAcceleration(cube);
 
     // integrate 
+    #pragma omp parallel for
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
-
+        // std::cout << "threads:" << omp_get_thread_num() << std::endl;
         if (currentPoint->isFixed() == true) {
             // stays the same
             continue;

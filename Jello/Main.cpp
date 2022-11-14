@@ -119,8 +119,6 @@ void draw_gui(GLFWwindow* window)
    ImGui::SliderFloat("Mass", &fMass, 0.0f, 50.0f);
    ImGui::SliderFloat("TimeStep", &fTimeStep, 0.001, 0.01);
    needReset = ImGui::Button("Reset");
-   //add reset and resolution
-   // then debug the 4 squares  
    ImGui::Checkbox("On Plate", &myCube->fixedFloor);
    ImGui::Checkbox("Structural Spring", &myCube->structuralSpring);
    ImGui::Checkbox("Shear Spring", &myCube->shearSpring);
@@ -282,13 +280,13 @@ void idle()
        myCube->timeStep = double(fTimeStep);
 
        myCube->reset();
-       // TODO Add the spring modes
 
    }
 
    //Pass time_sec value to the shaders
    int time_loc = glGetUniformLocation(shader_program, "time");
    glUniform1f(time_loc, time_sec);
+
 }
 
 void reload_shader()
@@ -422,19 +420,17 @@ int main(int argc, char **argv)
    while (!glfwWindowShouldClose(window))
    {
       idle();
-      // TO DO add constant external force
-      
-      myCube->setExternalForce(addGravity? glm::vec3(dragV, 0.0) + gravity : glm::vec3(dragV, 0.0));
-      
-       // + gravity// TODO why gravity + plate makes it go through? 
-      //myCube->setExternalForce(glm::vec3(sin(time_sec), 0.0, 0.0));
-      // TO DO add to reset simulation 
+
+      // physics
+      myCube->setExternalForce(addGravity ? glm::vec3(dragV, 0.0) + gravity : glm::vec3(dragV, 0.0));
+
       if (integrator == integratorEnum::EULER) {
           integrateEuler(myCube);
       }
       else if (integrator == integratorEnum::RK4) {
           integrateRK4(myCube);
       }
+      
       display(window);
 
       /* Poll for and process events */

@@ -7,6 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/norm.hpp>
 #include <vector>
+#include <omp.h>
 
 #include "Plane.h"
 #include "Cube.h" 
