@@ -58,10 +58,10 @@ float bg_vertices[] =
 };
 
 struct CameraUniforms {
-    glm::vec3 eye = glm::vec3(0.0f, 2.5f, 3.0f);
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-    glm::ivec2 resolution = glm::ivec2(800, 800);
-    float aspect = resolution.x / resolution.y;
+    glm::vec4 eye = glm::vec4(0.0f, 2.5f, 3.0f, 0.0f);
+    glm::vec4 up = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+    glm::vec4 resolution = glm::vec4(800.0f, 800.0f, 1.0f, 0.0f);
+    //float aspect = resolution.x / resolution.y;
 }CameraData;
 
 struct LightUniforms {
@@ -89,9 +89,9 @@ GLuint material_ubo = -1;
 GLuint camera_ubo = -1;
 namespace UboBinding
 {
-    int light = 0;
-    int material = 1;
-    int camera = 2;
+    int light = 2;
+    int material = 3;
+    int camera = 4;
 }
 
 enum PASS
@@ -236,6 +236,7 @@ void DrawScene()
     glBindTextureUnit(1, depth_tex); // Bind depth texture
 
     glDisable(GL_DEPTH_TEST);
+
     glBindVertexArray(attribless_vao);
     draw_attribless_quad();
 }
@@ -244,10 +245,12 @@ void DrawScene()
 void display(GLFWwindow* window)
 {
     glm::mat4 M = glm::rotate(angle, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::vec3(scale * mesh_data.mScaleFactor));
-    glm::mat4 V = glm::lookAt(CameraData.eye, glm::vec3(0.0f), CameraData.up);
-    glm::mat4 P = glm::perspective(glm::pi<float>() / 4.0f, CameraData.aspect, 0.1f, 100.0f);
+    glm::mat4 V = glm::lookAt(glm::vec3(CameraData.eye), glm::vec3(0.0f), glm::vec3(CameraData.up));
+    glm::mat4 P = glm::perspective(glm::pi<float>() / 4.0f, CameraData.resolution.z, 0.1f, 100.0f);
 
     glUseProgram(shader_program);
+
+    //glBindTexture(2, texture_id);
 
     // Get location for shader uniform variable
     glm::mat4 PV = P * V;
@@ -359,8 +362,8 @@ void GetScreenSize()
 void resize(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height); // Set viewport to cover entire framebuffer
-    CameraData.resolution = glm::ivec2(width, height);
-    CameraData.aspect = float(width) / float(height); // Set aspect ratio
+    CameraData.resolution = glm::vec4(width, height, width / height, 0.0f);
+    //CameraData.aspect = float(width) / float(height); // Set aspect ratio
 }
 
 //Initialize OpenGL state. This function only gets called once.
@@ -383,6 +386,7 @@ void initOpenGL()
 
     reload_shader();
     mesh_data = LoadMesh(mesh_name);
+    //texture_id = LoadTexture(texture_name);
 
     glGenVertexArrays(1, &attribless_vao);
 

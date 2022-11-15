@@ -7,16 +7,15 @@ layout(location = 3) uniform int pass;
 
 uniform sampler2D fboTex;
 
-layout(std140, binding = 0) uniform LightUniforms {
+layout(std140, binding = 2) uniform LightUniforms {
 	vec4 light_w; // world-space light position
 	vec4 bg_color; // Background color
 } Light;
 
-layout(std140, binding = 2) uniform CameraUniforms {
-    vec3 eye;
-    vec3 up;
-    ivec2 resolution;
-    float aspect;
+layout(std140, binding = 4) uniform CameraUniforms {
+    vec4 eye;
+    vec4 up;
+    vec4 resolution;
 } Camera;
 
 in vec3 pos_attrib; // This variable holds the position of vertices
@@ -61,6 +60,6 @@ void main(void)
 	else // Draw fullscreen quad
 	{
 		gl_Position = quad[ gl_VertexID ]; //get clip space coords out of quad array
-		outData.tex_coord = 0.5*(quad[ gl_VertexID ].xy + vec2(1.0)); 
+		outData.tex_coord = 0.5 * (quad[ gl_VertexID ].xy + vec2(1.0)); 
 	}
 }

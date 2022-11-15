@@ -1,27 +1,26 @@
 #version 440
 
-layout(location = 2) uniform float time;
-layout(location = 3) uniform int pass;
-
 layout(binding = 0) uniform sampler2D fbo_tex; 
 layout(binding = 1) uniform sampler2D depth_tex;
 
-layout(std140, binding = 0) uniform LightUniforms {
+layout(location = 2) uniform float time;
+layout(location = 3) uniform int pass;
+
+layout(std140, binding = 2) uniform LightUniforms {
     vec4 light_w; // world-space light position
     vec4 bg_color; // Background color
 } Light;
 
-layout(std140, binding = 1) uniform MaterialUniforms {
+layout(std140, binding = 3) uniform MaterialUniforms {
   vec4 base_color; // base color
   vec4 spec_color; // Specular Color
   float spec_factor; // Specular factor
 } Material;
 
-layout(std140, binding = 2) uniform CameraUniforms {
-    vec3 eye;
-    vec3 up;
-    ivec2 resolution;
-    float aspect;
+layout(std140, binding = 4) uniform CameraUniforms {
+    vec4 eye;
+    vec4 up;
+    vec4 resolution;
 } Camera;
 
 in VertexData
@@ -84,8 +83,9 @@ void main(void)
                 discard; // Discard back facing fragments
             }
             break;
-        case 4:
-            fragcolor = Light.bg_color;
+        case 4: // Textured Quad
+                vec2 uv = gl_FragCoord.xy / Camera.resolution.x;
+                fragcolor = texture(fbo_tex, uv);
             break;
         default:
             fragcolor = min(HackTransparency(), vec4(1.0));
