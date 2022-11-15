@@ -56,9 +56,9 @@ void main(void)
         case 1: // Render mesh back faces and store eye-space depth
             if(!gl_FrontFacing)
             {
-                depthVal = vec4(inData.depth.z); // Store eye-space depth
+                depthVal = inData.depth; // Store eye-space depth
 
-                fragcolor = vec4(0.85f, 0.25f, 0.25f, 1.0f); // Display solid color temporarily
+                //fragcolor = vec4(0.85f, 0.25f, 0.25f, 1.0f); // Display solid color temporarily
             }
             else
             {
@@ -71,6 +71,8 @@ void main(void)
                 // Compute front face depth
 
                 // Compute thickness
+                vec2 uv = gl_FragCoord.xy / Camera.resolution.x;
+                vec4 thickness = inData.depth - texture(depth_tex, uv);
 
                 // Get refracted background color
 

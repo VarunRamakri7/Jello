@@ -42,6 +42,7 @@ const vec4 quad[4] = vec4[] (vec4(-1.0, 1.0, 0.0, 1.0),
 
 void main(void)
 {
+	// For all passes except QUAD
 	if (pass != 4)
 	{
 		// Assign position depending on pass
