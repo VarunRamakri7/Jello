@@ -27,8 +27,8 @@
 
 #include "Cube.h"
 
-const int init_window_width = 800;
-const int init_window_height = 800;
+const int init_window_width = 1000;
+const int init_window_height = 1000;
 const char* const window_title = "Jello";
 
 static const std::string vertex_shader("template_vs.glsl");
@@ -47,7 +47,7 @@ float mouseReleaseTime = 0.0f;
 glm::vec2 dragV = glm::vec2(0.0); // from mouse interaction
 glm::vec3 gravity = glm::vec3(0.0, -9.8, 0.0);
 bool moveCam = false;
-glm::dvec3 initPlatePos = glm::dvec3(1.0, -0.5, 1.0);
+glm::dvec3 initPlatePos = glm::dvec3(1.0, 0.0, 0.0);
 
 // display
 bool showDiscrete = false;
@@ -138,6 +138,26 @@ void draw_gui(GLFWwindow* window)
    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
+glm::vec4 getWorld(glm::vec2 mouse) {
+    float x_NDC = (mouse[0] * 2.0f / init_window_width) - 1.0f;
+    float y_NDC = (mouse[1] * 2.0f / init_window_height) - 1.0f;
+    float depth;
+    glReadPixels( mouse[0], mouse[1], 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+    float z_NDC = (depth - myCamera->nearf) / (myCamera->farf - myCamera->nearf);  // Here you have it scaled to [0,1]
+    z_NDC = 2 * z_NDC - 1; //Scaled to [-1,1]
+
+    glm::vec4 ndcCoord = glm::vec4(x_NDC, y_NDC, z_NDC, 1.0f);
+    glm::vec4 clip = ndcCoord / ndcCoord.w;
+
+    glm::mat4 PV = myCamera->getPV();// *trackball.Get3DViewCameraMatrix();
+    // TODO get plate model's mat? but now its identity cos we change hte pixels 
+    glm::mat4 invPV = glm::inverse(PV);
+
+    glm::vec4 world = invPV * clip;
+
+    return world;
+}
+
 //set the callbacks for the virtual trackball
 //this is executed when the mouse is moving
 void MouseCallback(GLFWwindow* window, double x, double y) {
@@ -221,7 +241,7 @@ void display(GLFWwindow* window)
 
    glm::mat4 M = myCube->getModelMatrix();
    // move cam and no drag when C is pressed
-   glm::mat4 PV = myCamera->getPV() * trackball.Set3DViewCameraMatrix();
+   glm::mat4 PV = myCamera->getPV() * trackball.Get3DViewCameraMatrix();
    
    //std::cout << glm::to_string(M) << std::endl;
    glUseProgram(shader_program);
@@ -269,7 +289,7 @@ void idle()
        // calculate acceleration 
        glm::vec2 changeP = glm::vec2(mouseX, mouseY) - mousePosA;
        //* 0.001f slows it down
-       myPlate->offsetPosition(glm::dvec3(changeP.x * 0.001f, 0.0, 0.0), double(fTimeStep)); // NEED TO IMPLEMENT 3d move plate
+       //myPlate->offsetPosition(glm::dvec3(changeP.x * 0.001f, 0.0, 0.0), double(fTimeStep)); // NEED TO IMPLEMENT 3d move plate
        
        float moved = glm::length(changeP);
        float timeDiff = time_sec - mouseClickTime;
@@ -277,7 +297,10 @@ void idle()
            // drag
            dragV = changeP / (timeDiff * timeDiff) * 0.001f;
        }
+       // TODO need change in world space
 
+       glm::vec4 w = getWorld(glm::vec2(mouseX, mouseY));
+       myPlate->setPosition(glm::vec3(w.x, 0.0f, 0.0f));
 
    }
 
@@ -428,7 +451,7 @@ int main(int argc, char **argv)
    myCube->setSpringMode(true, true, true);
    boundingBox = new BoundingBox(5,5,5, glm::vec3(-2, 2, 2.0f));
    sceneObjs.push_back(boundingBox);
-   myPlate = new Plate(initPlatePos, 4.0);
+   myPlate = new Plate(initPlatePos, 2.0);
    myPlate->setConstraintPoints(myCube->firstLayer);
    
    //Init ImGui
@@ -443,7 +466,7 @@ int main(int argc, char **argv)
       idle();
 
       // physics
-      myCube->setExternalForce(addGravity ? glm::vec3(dragV, 0.0) + gravity : glm::vec3(dragV, 0.0));
+      //myCube->setExternalForce(addGravity ? glm::vec3(dragV, 0.0) + gravity : glm::vec3(dragV, 0.0));
 
       if (integrator == integratorEnum::EULER) {
           integrateEuler(myCube, double(fTimeStep));

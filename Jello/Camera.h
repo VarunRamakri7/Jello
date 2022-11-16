@@ -22,6 +22,9 @@ public:
     glm::vec3 getLookAt();
     glm::mat4 getPV();
 
+    float nearf = 0.01f;
+    float farf = 1000.f;
+
     void setPosition(glm::vec3 position);
     void setLookAt(glm::vec3 lookAt);
 
@@ -29,7 +32,7 @@ private:
     glm::vec3 position = glm::vec3(0, 0, 0);
     glm::vec3 lookAt = glm::vec3(0, 0, 0);
     const glm::vec3 yUp = glm::vec3(0, 1, 0);
-    glm::mat4 P = glm::perspective(65.f, 1.f, 0.01f, 1000.f);
+    glm::mat4 P = glm::perspective(65.f, 1.f, nearf, farf);
 };
 
 #endif

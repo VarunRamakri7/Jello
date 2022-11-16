@@ -17,6 +17,10 @@ public:
 
     std::vector <MassPoint*> constraintPoints{};
     void setPosition(glm::vec3 position);
+
+    void shake(glm::vec2 change, double speed);
+
+    const double maxShake = 0.5;
 };
 
 #endif

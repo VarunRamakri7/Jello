@@ -82,7 +82,7 @@ public:
 		}
 	}
 
-	glm::mat4 Set3DViewCameraMatrix()  //return the modelview
+	glm::mat4 Get3DViewCameraMatrix()  //return the modelview
 	{
 		return(modelview);
 	}
