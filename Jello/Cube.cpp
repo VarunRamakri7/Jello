@@ -68,8 +68,10 @@ void Cube::fillDiscretePoints(bool structural, bool shear, bool bend) {
                     // like placed on floor (fixed)
                     // TODO later add collision with plate so it can jiggle off the plate
                     point->setFixed(true);
+                    firstLayer.push_back(point);
                 }
                 discretePoints.push_back(point);
+
                 massPointMap[i][j][k] = point;
 
             }

@@ -13,6 +13,7 @@
 
 #include "MassPoint.h"
 
+
 class Cube {
     // jello 
 
@@ -35,7 +36,7 @@ class Cube {
         double stiffness = -50;
         double damping = -0.5;
         double mass = 1.0;
-        double timeStep = 0.005;
+
         int resolution = 1;
 
         bool structuralSpring;
@@ -44,6 +45,7 @@ class Cube {
         bool fixedFloor = true;
 
         std::vector <MassPoint*> discretePoints{};
+        std::vector <MassPoint*> firstLayer{};
 
         void resetAcceleration();
         void setExternalForce(glm::vec3 force);

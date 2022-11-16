@@ -173,6 +173,7 @@
     <ClCompile Include="Physics.cpp" />
     <ClCompile Include="Plane.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Plate.cpp" />
     <ClCompile Include="VideoMux.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -187,12 +188,14 @@
     <ClInclude Include="BoundingBox.h" />
     <ClInclude Include="Cube.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Globals.h" />
     <ClInclude Include="Physics.h" />
     <ClInclude Include="MassPoint.h" />
     <ClInclude Include="InitShader.h" />
     <ClInclude Include="LoadMesh.h" />
     <ClInclude Include="LoadTexture.h" />
     <ClInclude Include="Plane.h" />
+    <ClInclude Include="Plate.h" />
     <ClInclude Include="trackball.h" />
     <ClInclude Include="VideoMux.h" />
   </ItemGroup>

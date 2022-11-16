@@ -107,6 +107,29 @@ bool checkCollision(MassPoint* massPoint, BoundingBox* const bbox, std::vector<c
     return collisionPoints.size() != 0;
 }
 
+
+// check collision with plane
+bool checkCollision(MassPoint* massPoint, Plane* const plane, std::vector<collisionPoint>& collisionPoints) {
+    // for mass points in cube, check if in boundingbox
+    // if not inside, check if colliding 
+
+    glm::dvec3* const pos = massPoint->getPosition(); 
+
+    if (isPointInNegativeSide(*pos, *plane)) {
+        // find intersection point in plane 
+        //std::cout << "collide!" << std::endl;
+
+        // store mass point, closest point of collision, list of collision springs to process 
+        struct collisionPoint cp;
+        cp.closestPoint = computeClosestPoint(*pos, *plane);
+        cp.mp = massPoint;
+        collisionPoints.push_back(cp);
+        // process for all corners that maybe intersecting, so maybe it'll work 
+    }
+
+    return collisionPoints.size() != 0;
+}
+
 void processCollisionResponse(Cube* const cube, std::vector<collisionPoint>& collisionPoints) {
     if (collisionPoints.size() == 0) // no collision
         return;
@@ -159,7 +182,7 @@ void computeSpringAcceleration(const double& stiffness, const double& damping, c
  * computes accumulated acceleration for all masspoints in cube
  * @param Cube* cube
  */
-void computeAcceleration(Cube* cube) {
+void computeAcceleration(Cube* cube, double timeStep) {
     // TODO pass in list of objects in scene or use as extern variable 
     // reset accumulated acceleration to 0
     cube->resetAcceleration();
@@ -177,6 +200,8 @@ void computeAcceleration(Cube* cube) {
         for (const auto& s : sceneObjs) {
             checkCollision(currentPoint, s, collisionPoints);
         }
+        // check collision with plate 
+        //checkCollision(currentPoint, myPlate->platePlane, collisionPoints);
 
         // external forces
         // TODO  division is expensive? 
@@ -244,10 +269,10 @@ glm::dvec3 calculateDampingForce(const double& kd, const glm::dvec3& pointA, con
  * acceleration = dv/dt (change in velocity over change in time)
  * @param Cube* const cube - constant pointer to a cube
  */
-void integrateEuler(Cube* const cube) {
+void integrateEuler(Cube* const cube, double timeStep) {
     
     // compute accumulated acceleration of mass points in cube
-    computeAcceleration(cube);
+    computeAcceleration(cube, timeStep);
 
     // integrate 
     #pragma omp parallel for
@@ -261,11 +286,11 @@ void integrateEuler(Cube* const cube) {
 
         // one step euler
         // Velocity
-        glm::dvec3 vel = *currentPoint->getVelocity() + (*currentPoint->getAcceleration() * cube->timeStep);
+        glm::dvec3 vel = *currentPoint->getVelocity() + (*currentPoint->getAcceleration() * timeStep);
         currentPoint->setVelocity(vel);
 
         // Position
-        glm::dvec3 pos = *currentPoint->getPosition() + (*currentPoint->getVelocity() * cube->timeStep);
+        glm::dvec3 pos = *currentPoint->getPosition() + (*currentPoint->getVelocity() * timeStep);
         currentPoint->setPosition(pos);
     }
 }
@@ -276,7 +301,7 @@ void integrateEuler(Cube* const cube) {
  * @param Cube* const cube - constant pointer to a cube
  */
 
-void integrateRK4(Cube* cube) {
+void integrateRK4(Cube* cube, double timeStep) {
     // needs 4 integration for both point and velocity 
     // approximate differential equations
 
@@ -294,7 +319,7 @@ void integrateRK4(Cube* cube) {
     Cube buffer = *cube; // make a copy of cube
 
     // compute accumulated acceleration for all mass points in cube
-    computeAcceleration(cube);
+    computeAcceleration(cube, timeStep);
 
     // integrate
     for (int i = 0; i < cube->discretePoints.size(); i++) {
@@ -304,10 +329,10 @@ void integrateRK4(Cube* cube) {
         // dx/dt = F(t, x)
         // 1st step: k1 =  F(t0, x0)
 
-        // Position
-        glm::dvec3 dVel = *currentPoint->getVelocity() * cube->timeStep;
+ 
+        glm::dvec3 dVel = *currentPoint->getVelocity() * timeStep;
         // Velocity
-        glm::dvec3 dAcc = *currentPoint->getAcceleration() * cube->timeStep;
+        glm::dvec3 dAcc = *currentPoint->getAcceleration() * timeStep;
 
         F1p.push_back(dVel);
         F1v.push_back(dAcc);
@@ -327,7 +352,7 @@ void integrateRK4(Cube* cube) {
         }
     }
 
-    computeAcceleration(&buffer);
+    computeAcceleration(&buffer, timeStep);
 
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
@@ -335,11 +360,11 @@ void integrateRK4(Cube* cube) {
 
         // 2nd step: k2 = F(t + dt/2, x + h * k1/2) 
         // Position
-        glm::dvec3 dVel = *bufferPoint->getVelocity()* cube->timeStep;
+        glm::dvec3 dVel = *bufferPoint->getVelocity()* timeStep;
         F2p.push_back(dVel);
         
         // Velocity
-        glm::dvec3 dAcc = *bufferPoint->getAcceleration() * cube->timeStep;
+        glm::dvec3 dAcc = *bufferPoint->getAcceleration() * timeStep;
         F2v.push_back(dAcc);
 
         // store for 3rd step
@@ -357,7 +382,7 @@ void integrateRK4(Cube* cube) {
         }
     }
 
-    computeAcceleration(&buffer);
+    computeAcceleration(&buffer, timeStep);
 
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
@@ -365,11 +390,11 @@ void integrateRK4(Cube* cube) {
 
         // 3rd step: k3 = F(t + dt/2, x + h * k2/2) 
         // Position
-        glm::dvec3 dVel = *bufferPoint->getVelocity() * cube->timeStep;
+        glm::dvec3 dVel = *bufferPoint->getVelocity() * timeStep;
         F3p.push_back(dVel);
 
         // Velocity
-        glm::dvec3 dAcc = *bufferPoint->getAcceleration() * cube->timeStep;
+        glm::dvec3 dAcc = *bufferPoint->getAcceleration() * timeStep;
         F3v.push_back(dAcc);
 
         // store for 4th step
@@ -387,7 +412,7 @@ void integrateRK4(Cube* cube) {
         }
     }
 
-    computeAcceleration(&buffer);
+    computeAcceleration(&buffer, timeStep);
 
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
@@ -395,11 +420,11 @@ void integrateRK4(Cube* cube) {
 
         // 4th step: k4 = F(t + dt, x + h * k3) 
         // Position
-        glm::dvec3 dVel = *bufferPoint->getVelocity() * cube->timeStep;
+        glm::dvec3 dVel = *bufferPoint->getVelocity() * timeStep;
         F4p.push_back(dVel);
 
         // Velocity
-        glm::dvec3 dAcc = *bufferPoint->getAcceleration() * cube->timeStep;
+        glm::dvec3 dAcc = *bufferPoint->getAcceleration() * timeStep;
         F4v.push_back(dAcc);
 
         if (currentPoint->isFixed() == true) {

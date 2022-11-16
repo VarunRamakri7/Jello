@@ -21,6 +21,7 @@
 #include "BoundingBox.h"
 #include "Camera.h"
 #include "Physics.h"
+#include "Plate.h"
 
 #include <glm/gtx/string_cast.hpp> // for debug
 
@@ -46,6 +47,7 @@ float mouseReleaseTime = 0.0f;
 glm::vec2 dragV = glm::vec2(0.0); // from mouse interaction
 glm::vec3 gravity = glm::vec3(0.0, -9.8, 0.0);
 bool moveCam = false;
+glm::dvec3 initPlatePos = glm::dvec3(1.0, -0.5, 1.0);
 
 // display
 bool showDiscrete = false;
@@ -66,7 +68,7 @@ bool needReset = false;
 // scene
 Cube* myCube;
 BoundingBox* boundingBox;
-Plane* plate;
+Plate* myPlate;
 Camera* myCamera;
 const glm::vec3 cameraInitPos = glm::vec3(0.0f, 0.0f, 5.0f);
 std::vector<BoundingBox*> sceneObjs;
@@ -160,7 +162,7 @@ void MouseButtonCallback(GLFWwindow* window, int button, int state, int mods) {
     ImGuiIO& io = ImGui::GetIO();
     io.AddMouseButtonEvent(button, state);
     if (io.WantCaptureMouse) return; //make sure you do not call this callback when over a menu
-   
+
     //process them
     if (button == GLFW_MOUSE_BUTTON_LEFT && state == GLFW_PRESS)
     {
@@ -220,15 +222,20 @@ void display(GLFWwindow* window)
    glm::mat4 M = myCube->getModelMatrix();
    // move cam and no drag when C is pressed
    glm::mat4 PV = myCamera->getPV() * trackball.Set3DViewCameraMatrix();
-
+   
    //std::cout << glm::to_string(M) << std::endl;
    glUseProgram(shader_program);
 
    if (showBB) {
        boundingBox->render(1);
    }
+
    myCube->render(1, showDiscrete);
-   //plate->render(1);
+   if (myCube->fixedFloor) {
+       // show plate
+       myPlate->render(1);
+   }
+   
 
    //Get location for shader uniform variable
    glm::mat4 PVM = PV *M;
@@ -261,12 +268,16 @@ void idle()
 
        // calculate acceleration 
        glm::vec2 changeP = glm::vec2(mouseX, mouseY) - mousePosA;
+       //* 0.001f slows it down
+       myPlate->offsetPosition(glm::dvec3(changeP.x * 0.001f, 0.0, 0.0), double(fTimeStep)); // NEED TO IMPLEMENT 3d move plate
+       
        float moved = glm::length(changeP);
        float timeDiff = time_sec - mouseClickTime;
        if (timeDiff > 0.01) {
            // drag
            dragV = changeP / (timeDiff * timeDiff) * 0.001f;
        }
+
 
    }
 
@@ -277,10 +288,18 @@ void idle()
        myCube->stiffness = (-1.0) * double(fStiffness); // negate
        myCube->damping = (-1.0) * double(fDamping); // negate
        myCube->mass = double(fMass);
-       myCube->timeStep = double(fTimeStep);
+       //myCube->timeStep = double(fTimeStep);
+       //timeStep = double(fTimeStep);
+       // which means timestep changes in real time
 
        myCube->reset();
-
+       myPlate->setPosition(initPlatePos);
+       // need to reconstrain since new masspoints are created
+       // TODO can we just reset mass point locs? 
+       if (myCube->fixedFloor) {
+           myPlate->setConstraintPoints(myCube->firstLayer);
+       }
+      
    }
 
    //Pass time_sec value to the shaders
@@ -409,6 +428,8 @@ int main(int argc, char **argv)
    myCube->setSpringMode(true, true, true);
    boundingBox = new BoundingBox(5,5,5, glm::vec3(-2, 2, 2.0f));
    sceneObjs.push_back(boundingBox);
+   myPlate = new Plate(initPlatePos, 4.0);
+   myPlate->setConstraintPoints(myCube->firstLayer);
    
    //Init ImGui
    IMGUI_CHECKVERSION();
@@ -425,10 +446,10 @@ int main(int argc, char **argv)
       myCube->setExternalForce(addGravity ? glm::vec3(dragV, 0.0) + gravity : glm::vec3(dragV, 0.0));
 
       if (integrator == integratorEnum::EULER) {
-          integrateEuler(myCube);
+          integrateEuler(myCube, double(fTimeStep));
       }
       else if (integrator == integratorEnum::RK4) {
-          integrateRK4(myCube);
+          integrateRK4(myCube, double(fTimeStep));
       }
       
       display(window);

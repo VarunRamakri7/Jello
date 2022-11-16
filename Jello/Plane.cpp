@@ -26,7 +26,6 @@ void Plane::render(GLuint modelParameter) {
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glEnableVertexAttribArray(0);
-
   
     // enable point size
     // 

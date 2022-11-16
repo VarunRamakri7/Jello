@@ -24,7 +24,7 @@ class Plane {
         bool checkCollision(glm::vec3 point);
         glm::dvec3 pointInPlane;
 
-    private:
+    //private:
         glm::vec3 pointA; // top left
         glm::vec3 pointB; // top right
         glm::vec3 pointC; // bottom left
