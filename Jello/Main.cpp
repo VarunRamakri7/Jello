@@ -60,17 +60,16 @@ float bg_vertices[] =
 struct CameraUniforms {
     glm::vec4 eye = glm::vec4(0.0f, 2.5f, 3.0f, 0.0f);
     glm::vec4 up = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-    glm::vec4 resolution = glm::vec4(800.0f, 800.0f, 1.0f, 0.0f);
-    //float aspect = resolution.x / resolution.y;
+    glm::vec4 resolution = glm::vec4(800.0f, 800.0f, 1.0f, 0.0f); // Width, Height, Aspect Ratio
 }CameraData;
 
 struct LightUniforms {
     glm::vec4 light_w = glm::vec4(-10.0f, 10.0f, 5.0f, 1.0f); // World-space light position
-    glm::vec4 bg_color = glm::vec4(0.35f, 0.35f, 0.35f, 1.0f); // Background color
+    glm::vec4 bg_color = glm::vec4(1.0f, 0.67f, 0.67f, 1.0f); // Background color
 } LightData;
 
 struct MaterialUniforms {
-    glm::vec4 base_color = glm::vec4(0.35f, 0.35f, 0.35f, 1.0f); // base color
+    glm::vec4 base_color = glm::vec4(0.75f, 0.75f, 0.75f, 1.0f); // base color
     glm::vec4 spec_color = glm::vec4(0.85f, 0.85f, 0.85f, 1.0f); // Specular Color
     float spec_factor = 2.0f; // Specular factor
 } MaterialData;
@@ -100,7 +99,7 @@ enum PASS
     BACK_FACES, // Render mesh back faces and store eye-space depth
     FRONT_FACES, // Render front faces, compute eye-space depth
     DEFAULT,
-    QUAD
+    QUAD // Textured quad
 };
 
 float angle = 0.75f;
