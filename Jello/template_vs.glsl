@@ -61,6 +61,6 @@ void main(void)
 	else // Draw fullscreen quad
 	{
 		gl_Position = quad[ gl_VertexID ]; //get clip space coords out of quad array
-		outData.tex_coord = 0.5 * (quad[ gl_VertexID ].xy + vec2(1.0)); 
+		outData.tex_coord = 0.5 * (quad[gl_VertexID].xy + vec2(1.0f)); 
 	}
 }

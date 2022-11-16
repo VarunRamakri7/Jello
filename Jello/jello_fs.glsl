@@ -56,7 +56,7 @@ void main(void)
         case 1: // Render mesh back faces and store eye-space depth
             if(!gl_FrontFacing)
             {
-                depthVal = inData.depth; // Store eye-space depth
+                depthVal = vec4(inData.depth.z); // Store eye-space depth
 
                 //fragcolor = vec4(0.85f, 0.25f, 0.25f, 1.0f); // Display solid color temporarily
             }
@@ -71,14 +71,15 @@ void main(void)
                 // Compute front face depth
 
                 // Compute thickness
-                vec2 uv = gl_FragCoord.xy / Camera.resolution.x;
+                vec2 uv = vec2(gl_FragCoord.x / Camera.resolution.x, gl_FragCoord.y / Camera.resolution.y);
                 vec4 thickness = inData.depth - texture(depth_tex, uv);
 
                 // Get refracted background color
 
                 // Compute Beer's Law for final color
 
-                fragcolor = vec4(0.25f, 0.25f, 0.85f, 1.0f); // Display solid color temporarily
+                //fragcolor = vec4(0.25f, 0.25f, 0.85f, 1.0f); // Display solid color temporarily
+                fragcolor = min(HackTransparency(), vec4(1.0));
             }
             else
             {
@@ -87,7 +88,8 @@ void main(void)
             break;
         case 4: // Textured Quad
                 vec2 uv = gl_FragCoord.xy / Camera.resolution.x;
-                fragcolor = texture(fbo_tex, uv);
+                fragcolor = texture(fbo_tex, uv); // Display FBO texture
+                //fragcolor = texture(depth_tex, uv); // Display depth texture
             break;
         default:
             fragcolor = min(HackTransparency(), vec4(1.0));
