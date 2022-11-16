@@ -39,7 +39,7 @@ GLuint attribless_vao = -1;
 GLuint rectVAO;
 GLuint rectVBO;
 
-static const std::string mesh_name = "RubiksCube_01.obj";
+static const std::string mesh_name = "cube.obj";
 
 MeshData mesh_data;
 
