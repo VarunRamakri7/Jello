@@ -107,8 +107,8 @@ void main(void)
                 // Compute front face depth
 
                 // Compute thickness
-                vec2 uv = vec2(gl_FragCoord.x / Camera.resolution.x, gl_FragCoord.y / Camera.resolution.y);
-                vec3 thickness = abs(normalize(inData.depth) - texture(depth_tex, uv)).xyz;
+                vec2 uv = vec2(gl_FragCoord.x / Camera.resolution.x, gl_FragCoord.y / Camera.resolution.y); // Get uv coordinate
+                vec3 thickness = abs(normalize(inData.depth) - texture(depth_tex, uv)).xyz; // Compute thickness from front face depth and back face depth
 
                 // Get refracted background color
                 //vec4 ref_bg_color = Light.bg_color * inverse(transpose(M));
@@ -117,7 +117,7 @@ void main(void)
                 vec3 color = min(HackTransparency(), vec4(1.0)).xyz;
                 vec3 absorb = exp(-jello_absorb * thickness);
 
-                fragcolor = vec4(color, 1.0);
+                fragcolor = vec4(color * absorb, 1.0);
             }
             else
             {

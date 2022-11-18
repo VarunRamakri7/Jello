@@ -71,7 +71,7 @@ struct LightUniforms {
 struct MaterialUniforms {
     glm::vec4 base_color = glm::vec4(0.75f, 0.75f, 0.75f, 1.0f); // base color
     glm::vec4 spec_color = glm::vec4(0.85f, 0.85f, 0.85f, 1.0f); // Specular Color
-    float spec_factor = 0.2f; // Specular factor
+    float spec_factor = 0.1f; // Specular factor
 } MaterialData;
 
 // Locations for the uniforms which are not in uniform blocks
@@ -103,7 +103,7 @@ enum PASS
 };
 
 float angle = 0.75f;
-float scale = 0.5f;
+float scale = 0.35f;
 bool recording = false;
 
 void draw_gui(GLFWwindow* window)
