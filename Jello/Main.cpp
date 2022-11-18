@@ -64,14 +64,14 @@ struct CameraUniforms {
 }CameraData;
 
 struct LightUniforms {
-    glm::vec4 light_w = glm::vec4(-10.0f, 10.0f, 5.0f, 1.0f); // World-space light position
+    glm::vec4 light_w = glm::vec4(0.0f, 5.0f, 5.0f, 1.0f); // World-space light position
     glm::vec4 bg_color = glm::vec4(1.0f, 0.67f, 0.67f, 1.0f); // Background color
 } LightData;
 
 struct MaterialUniforms {
     glm::vec4 base_color = glm::vec4(0.75f, 0.75f, 0.75f, 1.0f); // base color
     glm::vec4 spec_color = glm::vec4(0.85f, 0.85f, 0.85f, 1.0f); // Specular Color
-    float spec_factor = 2.0f; // Specular factor
+    float spec_factor = 0.2f; // Specular factor
 } MaterialData;
 
 // Locations for the uniforms which are not in uniform blocks
@@ -155,8 +155,7 @@ void draw_gui(GLFWwindow* window)
 
    ImGui::SliderFloat3("Camera Eye", &CameraData.eye.x, -10.0f, 10.0f);
 
-   //Show fbo_tex for debugging purposes. This is highly recommended for multipass rendering.
-   ImGui::Image((void*)fbo_tex, ImVec2(128.0f, 128.0f), ImVec2(0.0, 1.0), ImVec2(1.0, 0.0)); ImGui::SameLine();
+   ImGui::Image((void*)fbo_tex, ImVec2(128.0f, 128.0f), ImVec2(0.0, 1.0), ImVec2(1.0, 0.0)); ImGui::SameLine(); // Show FBO texture
    ImGui::Image((void*)depth_tex, ImVec2(128.0f, 128.0f), ImVec2(0.0, 1.0), ImVec2(1.0, 0.0)); // Show depth texture
    
    ImGui::End();
@@ -167,7 +166,7 @@ void draw_gui(GLFWwindow* window)
 
    ImGui::ColorEdit3("Base Color", &MaterialData.base_color.r, 0);
    ImGui::ColorEdit3("Specular Color", &MaterialData.spec_color.r, 0);
-   ImGui::SliderFloat("Specular Factor", &MaterialData.spec_factor, 1.0f, 10.0f);
+   ImGui::SliderFloat("Specular Factor", &MaterialData.spec_factor, 0.1f, 1.0f);
    ImGui::ColorEdit3("Background Color", &LightData.bg_color.r, 0);
 
    ImGui::End();
