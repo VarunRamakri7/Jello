@@ -14,8 +14,9 @@
 #include "BoundingBox.h"
 
 // takes care of the interactions between the objects in scene
-extern std::vector<BoundingBox*> sceneObjs;
-//extern Plate* myPlate; // TODO make plane? 
+
+// global variable
+extern BoundingBox* boundingBox;
 
 struct collisionPoint {
     MassPoint* mp; // need to keep const cos it already collided ? dont want it to be moving

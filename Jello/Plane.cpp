@@ -14,14 +14,6 @@ Plane::Plane(glm::vec3 pointA, glm::vec3 pointB, glm::vec3 pointC, glm::vec3 poi
     this->initArrays();
 }
 
-bool Plane::checkCollision(glm::vec3 point) {
-    // check as if plane is 2 triangles 
-    /*if (pointInTriangle(point, this->pointD, this->pointC, this->pointA) || pointInTriangle(point, this->pointA, this->pointB, this->pointD)) {
-        return true;
-    }*/
-    return false;
-}
-
 void Plane::render(GLuint modelParameter) {
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -35,7 +27,6 @@ void Plane::render(GLuint modelParameter) {
     glDrawArrays(GL_TRIANGLE_STRIP, 0, this->dataSize / 3); // TODO Really? can i divide 3 again? 
     //glDisable(GL_PROGRAM_POINT_SIZE)
 };
-
 
 glm::mat4 Plane::getModelMatrix() {
     return this->modelMatrix;

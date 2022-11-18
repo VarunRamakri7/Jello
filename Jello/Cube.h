@@ -51,9 +51,6 @@ class Cube {
         void setExternalForce(glm::vec3 force);
 
     private:
-        float scale = 1.0f;
-        glm::vec3 position = glm::vec3(0.0f);
-
         // render
         GLuint VBO, VAO;
         std::vector <GLfloat> data {};
@@ -61,10 +58,11 @@ class Cube {
         glm::mat4 modelMatrix = glm::mat4(1.0f);
 
         void initArrays();
-
         void fillDiscretePoints(bool structural, bool shear, bool bend);
         void addConnection(MassPoint**** massPointMap, MassPoint* point, int i, int j, int k);
 
+        float scale = 1.0f;
+        glm::vec3 position = glm::vec3(0.0f);
         // unit cube (m)
         const std::vector <glm::vec3> initPoints{
             glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec3(0.5f, -0.5f, 0.5f),

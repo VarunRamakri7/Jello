@@ -11,16 +11,13 @@
 #include <vector>
 
 
-// camera should have view and perspective matrix, takes care of the looking 
-// can also just be a struct? 
-
 class Camera {
 public:
     Camera();
 
     glm::vec3 getPosition();
     glm::vec3 getLookAt();
-    glm::mat4 getPV();
+    glm::mat4 getPV(); // perspective view matrix
 
     float nearf = 0.01f;
     float farf = 1000.f;

@@ -117,33 +117,3 @@ void Plate::setPosition(glm::vec3 position) {
 void Plate::setConstraintPoints(std::vector <MassPoint*> points) {
     this->constraintPoints = points;
 }
-
-void Plate::shake(glm::vec2 change, double timeStep){
-     // p = p + v * t
-    // only move in x direction 
-    // TODO make it change in mouse cursor not just click 
-    double speed = (glm::length(change) / timeStep) * 0.0001;
-    std::cout << speed << std::endl;
-    
-    // TODO use normalize? 
-    glm::dvec3 dir = change[0] > 0 ? glm::dvec3(1.0, 0.0, 0.0) : glm::dvec3(-1.0, 0.0, 0.0);
-    glm::dvec3 cdir = speed * dir;
-    for (int i = 0; i < 3; i++) {
-        if (glm::abs(cdir[i]) > maxShake) {
-            cdir[i] = cdir[i] < 0 ? (maxShake * -1.0) : maxShake;
-        }
-    }
-    // visually move plane 
-    setPosition(glm::dvec3(this->position) + cdir);
-
-    // move constraint points
-    for (const auto& p : this->constraintPoints) {
-        // this keeps on adding ...  TODO cap this 
-        p->setPosition(*p->getPosition() + cdir);
-        // change in position over change in time
-        // should time be a global variable 
-        glm::dvec3 vel = cdir / timeStep;
-
-        p->setVelocity(vel);
-    }
-}

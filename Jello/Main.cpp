@@ -27,8 +27,8 @@
 
 #include "Cube.h"
 
-const int init_window_width = 1000;
-const int init_window_height = 1000;
+const int init_window_width = 1500;
+const int init_window_height = 1500;
 const char* const window_title = "Jello";
 
 static const std::string vertex_shader("template_vs.glsl");
@@ -40,39 +40,46 @@ bool recording = false;
 // interactive
 TrackBallC trackball;
 bool mouseLeft, mouseMid, mouseRight;
-GLdouble mouseX, mouseY;
-glm::vec2 mousePosA;
-float mouseClickTime = 0.0f;
-float mouseReleaseTime = 0.0f;
-glm::vec2 dragV = glm::vec2(0.0); // from mouse interaction
-glm::vec3 gravity = glm::vec3(0.0, -9.8, 0.0);
-bool moveCam = false;
-glm::dvec3 initPlatePos = glm::dvec3(1.0, 0.0, 0.0);
+GLdouble mouseX, mouseY; // current mouse positions
+glm::vec2 mouseClickedPos; // stored mouse position on click
+float mouseClickTime = 0.0f; // track time elapsed since clicked
+glm::vec2 dragV = glm::vec2(0.0); // drag acceleration 
+bool moveCam = false; // if user holds "c" on the keyboard, will make this true -> moves camera
+bool movePlate = false; // if user holds "p" on the keyboard, will make this true -> moves plate
+// if user drags mouse will apply acceleration force on jello
 
 // display
 bool showDiscrete = false;
-bool showBB = true;
+bool showBB = true; // show bounding box
 
 // physics
+glm::vec3 gravity = glm::vec3(0.0, -9.8, 0.0); // acceleration 
 bool addGravity = false;
 enum integratorEnum {
     EULER, RK4
 }; // euler = 0 , RK4 = 1
 int integrator = integratorEnum::EULER;
+// float values for it to be adjustable with ImGui
 float fStiffness = 50.f;
 float fDamping = 0.5f;
 float fMass = 1.0f;
 float fTimeStep = 0.005f;
+
 bool needReset = false;
 
 // scene
 Cube* myCube;
-BoundingBox* boundingBox;
 Plate* myPlate;
 Camera* myCamera;
-const glm::vec3 cameraInitPos = glm::vec3(0.0f, 0.0f, 5.0f);
-std::vector<BoundingBox*> sceneObjs;
+BoundingBox* boundingBox;
 
+const glm::vec3 cameraInitPos = glm::vec3(0.0f, 0.0f, 5.0f);
+glm::dvec3 initPlatePos = glm::dvec3(0.5, 0.0, 0.5);
+
+
+/*
+ * Draws the GUI with ImGui
+ */
 void draw_gui(GLFWwindow* window)
 {
    //Begin ImGui Frame
@@ -112,23 +119,33 @@ void draw_gui(GLFWwindow* window)
       }
    }
 
+   // display
+   ImGui::Text("Display");
    ImGui::Checkbox("Show discrete", &showDiscrete);
    ImGui::Checkbox("Show bounding box", &showBB);
    ImGui::SliderInt("Particle Size", &myCube->pointSize, 1, 10);
-   ImGui::SliderInt("Jello Resolution", &myCube->resolution, 1, 8);
+   ImGui::Checkbox("Visualize Springs", &myCube->showSpring);
+
+   // physics
+   ImGui::Text("Physics");
    ImGui::SliderFloat("Stiffness", &fStiffness, 0.0f, 100.0f);
    ImGui::SliderFloat("Damping", &fDamping, 0.0, 1.0f);
    ImGui::SliderFloat("Mass", &fMass, 0.0f, 50.0f);
-   ImGui::SliderFloat("TimeStep", &fTimeStep, 0.001, 0.01);
-   needReset = ImGui::Button("Reset");
+ 
+   ImGui::Text("Jello");
+   ImGui::SliderInt("Jello Resolution", &myCube->resolution, 1, 8);
    ImGui::Checkbox("On Plate", &myCube->fixedFloor);
    ImGui::Checkbox("Structural Spring", &myCube->structuralSpring);
    ImGui::Checkbox("Shear Spring", &myCube->shearSpring);
    ImGui::Checkbox("Bend Spring", &myCube->bendSpring);
-   ImGui::Checkbox("Visualize Springs", &myCube->showSpring);
    ImGui::Checkbox("Add Gravity", &addGravity);
+
+   needReset = ImGui::Button("Reset");
+
+   ImGui::Text("Integrators");
    ImGui::RadioButton("Euler", &integrator, integratorEnum::EULER);
    ImGui::RadioButton("RK4", &integrator, integratorEnum::RK4);
+   ImGui::SliderFloat("TimeStep", &fTimeStep, 0.001, 0.01);
 
    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
    ImGui::End();
@@ -138,24 +155,29 @@ void draw_gui(GLFWwindow* window)
    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-glm::vec4 getWorld(glm::vec2 mouse) {
+/*
+* Converts screen space mouse pixel coordinates to world space 
+*/
+void getWorld(glm::vec2 mouse, glm::vec4& world) {
+    // get depth (should be constant)
+    float depth;
+    glReadPixels(mouse[0], mouse[1], 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+
+    // scale to NDC: -1 <> 1
     float x_NDC = (mouse[0] * 2.0f / init_window_width) - 1.0f;
     float y_NDC = (mouse[1] * 2.0f / init_window_height) - 1.0f;
-    float depth;
-    glReadPixels( mouse[0], mouse[1], 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
-    float z_NDC = (depth - myCamera->nearf) / (myCamera->farf - myCamera->nearf);  // Here you have it scaled to [0,1]
-    z_NDC = 2 * z_NDC - 1; //Scaled to [-1,1]
-
+    float z_NDC = (depth - myCamera->nearf) / (myCamera->farf - myCamera->nearf);  
+    z_NDC = 2 * z_NDC - 1; 
+    // into homogeneous coord
     glm::vec4 ndcCoord = glm::vec4(x_NDC, y_NDC, z_NDC, 1.0f);
+    // clip space
     glm::vec4 clip = ndcCoord / ndcCoord.w;
 
     glm::mat4 PV = myCamera->getPV();// *trackball.Get3DViewCameraMatrix();
     // TODO get plate model's mat? but now its identity cos we change hte pixels 
     glm::mat4 invPV = glm::inverse(PV);
 
-    glm::vec4 world = invPV * clip;
-
-    return world;
+    world = invPV * clip;
 }
 
 //set the callbacks for the virtual trackball
@@ -192,7 +214,7 @@ void MouseButtonCallback(GLFWwindow* window, int button, int state, int mods) {
         
         mouseLeft = true;
         mouseClickTime = time_sec;
-        mousePosA = glm::vec2(mouseX, mouseY); // store clicked pos
+        mouseClickedPos = glm::vec2(mouseX, mouseY); // store clicked pos
     }
     if (button == GLFW_MOUSE_BUTTON_LEFT && state == GLFW_RELEASE)
     {
@@ -239,11 +261,11 @@ void display(GLFWwindow* window)
    //Clear the screen to the color previously specified in the glClearColor(...) call.
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+   // model matrix
    glm::mat4 M = myCube->getModelMatrix();
-   // move cam and no drag when C is pressed
+   // perspective and view matrix
    glm::mat4 PV = myCamera->getPV() * trackball.Get3DViewCameraMatrix();
    
-   //std::cout << glm::to_string(M) << std::endl;
    glUseProgram(shader_program);
 
    if (showBB) {
@@ -284,24 +306,26 @@ void idle()
 
    // only if not moving camera
    if (mouseLeft && !moveCam) {
-       // hold
+       // dragging mouse
 
-       // calculate acceleration 
-       glm::vec2 changeP = glm::vec2(mouseX, mouseY) - mousePosA;
-       //* 0.001f slows it down
-       //myPlate->offsetPosition(glm::dvec3(changeP.x * 0.001f, 0.0, 0.0), double(fTimeStep)); // NEED TO IMPLEMENT 3d move plate
-       
-       float moved = glm::length(changeP);
-       float timeDiff = time_sec - mouseClickTime;
-       if (timeDiff > 0.01) {
-           // drag
-           dragV = changeP / (timeDiff * timeDiff) * 0.001f;
+       // calculate acceleration in world space
+       glm::vec4 clickedW;
+       glm::vec4 currentW;
+       getWorld(glm::vec2(mouseX, mouseY), currentW);
+       // move plate
+       if (movePlate) {
+           myPlate->setPosition(glm::vec3(currentW.x, 0.0f, 0.0f));
        }
-       // TODO need change in world space
+       else {
+           // acting as acceleration force
+           getWorld(mouseClickedPos, clickedW);
 
-       glm::vec4 w = getWorld(glm::vec2(mouseX, mouseY));
-       myPlate->setPosition(glm::vec3(w.x, 0.0f, 0.0f));
-
+           float timeDiff = time_sec - mouseClickTime;
+           if (timeDiff > 0.01) {
+               // drag : velocity = changeP/timeDiff -> acceleration /timeDiff again 
+               dragV = (currentW - clickedW) / (timeDiff * timeDiff);
+           }
+       }
    }
 
    if (needReset) {
@@ -354,7 +378,6 @@ void reload_shader()
 //This function gets called when a key is pressed
 void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-   //std::cout << "key : " << key << ", " << char(key) << ", scancode: " << scancode << ", action: " << action << ", mods: " << mods << std::endl;
 
    if(action == GLFW_PRESS)
    {
@@ -372,6 +395,10 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
          case GLFW_KEY_C:
              moveCam = true;
              break;
+
+         case GLFW_KEY_P:
+             movePlate = true;
+             break;
       }
    }
    else if (action == GLFW_RELEASE) {
@@ -380,21 +407,14 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
        case GLFW_KEY_C:
            moveCam = false;
            break;
+
+       case GLFW_KEY_P:
+           movePlate = false;
+           break;
        }
    }
 }
 
-//This function gets called when the mouse moves over the window.
-void mouse_cursor(GLFWwindow* window, double x, double y)
-{
-    //std::cout << "cursor pos: " << x << ", " << y << std::endl;
-}
-
-//This function gets called when a mouse button is pressed.
-void mouse_button(GLFWwindow* window, int button, int action, int mods)
-{
-    //std::cout << "button : "<< button << ", action: " << action << ", mods: " << mods << std::endl;
-}
 
 //Initialize OpenGL state. This function only gets called once.
 void initOpenGL()
@@ -411,6 +431,17 @@ void initOpenGL()
    reload_shader();
 }
 
+
+void buildScene() {
+    // build scene
+    myCamera = new Camera();
+    myCamera->setPosition(cameraInitPos);
+    myCube = new Cube(2); // initial cube resolution = 2 
+    myCube->setSpringMode(true, true, true);
+    boundingBox = new BoundingBox(5, 5, 5, glm::vec3(-2, 2, 2.0f));
+    myPlate = new Plate(initPlatePos, 2.0);
+    myPlate->setConstraintPoints(myCube->firstLayer);
+}
 
 
 //C++ programs start executing in the main() function.
@@ -445,14 +476,7 @@ int main(int argc, char **argv)
    glfwSetMouseButtonCallback(window, MouseButtonCallback);
 
    initOpenGL();
-   myCamera = new Camera();
-   myCamera->setPosition(cameraInitPos);
-   myCube = new Cube(2);
-   myCube->setSpringMode(true, true, true);
-   boundingBox = new BoundingBox(5,5,5, glm::vec3(-2, 2, 2.0f));
-   sceneObjs.push_back(boundingBox);
-   myPlate = new Plate(initPlatePos, 2.0);
-   myPlate->setConstraintPoints(myCube->firstLayer);
+   buildScene();
    
    //Init ImGui
    IMGUI_CHECKVERSION();
@@ -466,7 +490,10 @@ int main(int argc, char **argv)
       idle();
 
       // physics
-      //myCube->setExternalForce(addGravity ? glm::vec3(dragV, 0.0) + gravity : glm::vec3(dragV, 0.0));
+      if (movePlate == false) {
+          // acting as external acceleration force
+          myCube->setExternalForce(addGravity ? glm::vec3(dragV, 0.0) + gravity : glm::vec3(dragV, 0.0));
+      }
 
       if (integrator == integratorEnum::EULER) {
           integrateEuler(myCube, double(fTimeStep));

@@ -74,25 +74,13 @@ bool checkCollision(MassPoint* massPoint, BoundingBox* const bbox, std::vector<c
     // if not inside, check if colliding 
 
     glm::dvec3* const pos = massPoint->getPosition(); // already world space
-    //glm::dvec4 p = glm::dvec4(*pos, 1.0) * cube->getModelMatrix();
-    //if (i == 0) {
-    //    //std::cout << "P :" << p.x << ", " << p.y << ", " << p.z << std::endl;
-    //    //std::cout << "P :" << pos->x << ", "<< pos->y << ", " << pos->z << std::endl;
-    //    if (isPointInBox(pos, bbox)) {
-    //        //std::cout << "P in " << std::endl;
-    //    }
-    //    else {
-    //        //std::cout << "P out " << std::endl;
-    //    }
-    //}
+
     if (!isPointInBox(pos, bbox)) {
         // collide 
         // each plane in box, check for collision
-        //std::cout << "out!" << std::endl;
         for (int p = 0; p < 6; p++) {
             if (isPointInNegativeSide(*pos, *bbox->planes[p])) {
                 // find intersection point in plane 
-                //std::cout << "collide!" << std::endl;
 
                 // store mass point, closest point of collision, list of collision springs to process 
                 struct collisionPoint cp;
@@ -197,9 +185,7 @@ void computeAcceleration(Cube* cube, double timeStep) {
         computeSpringAcceleration(cube->stiffness, cube->damping, cube->mass, currentPoint);
 
         // check if each point collides with any objects in the scene
-        for (const auto& s : sceneObjs) {
-            checkCollision(currentPoint, s, collisionPoints);
-        }
+        checkCollision(currentPoint, boundingBox, collisionPoints);
         // check collision with plate 
         //checkCollision(currentPoint, myPlate->platePlane, collisionPoints);
 

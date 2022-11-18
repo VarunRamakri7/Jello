@@ -16,12 +16,11 @@ class Plane {
         Plane(glm::vec3 pointA, glm::vec3 pointB, glm::vec3 pointC, glm::vec3 pointD);
         
         // render
-        void render(GLuint modelParameter); // TODO make class for renderable 
+        void render(GLuint modelParameter); 
         glm::mat4 getModelMatrix();
         glm::dvec3 normal;
 
         // physics
-        bool checkCollision(glm::vec3 point);
         glm::dvec3 pointInPlane;
 
     //private:
