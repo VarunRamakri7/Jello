@@ -74,12 +74,12 @@ vec4 HackTransparency()
     vec3 reflect_dir = -reflect(inData.light_dir, inData.normal);
 
     float fresnel = FresnelReflectAmount(n_air, n_obj, inData.normal, inData.light_dir);
-    fresnel -= 1.0f;
+    //fresnel -= 1.0f;
 
     float spec = max(dot(inData.eye_dir, reflect_dir * fresnel), 0.0);
     spec *= spec;
 
-    return (Material.base_color + Material.spec_factor * spec * Material.spec_color) * Light.bg_color;
+    return (Material.base_color + Material.spec_color * spec * Material.spec_factor) * Light.bg_color;
 }
 
 void main(void)
