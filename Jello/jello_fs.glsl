@@ -3,6 +3,7 @@
 layout(binding = 0) uniform sampler2D fbo_tex; 
 layout(binding = 1) uniform sampler2D depth_tex;
 
+layout(location = 0) uniform mat4 M;
 layout(location = 2) uniform float time;
 layout(location = 3) uniform int pass;
 
@@ -36,11 +37,46 @@ in VertexData
 out layout(location = 0) vec4 fragcolor; //the output color for this fragment    
 out layout(location = 1) vec4 depthVal; // Write depth to Color attachment 1
 
+const float near = 0.1f;
+const float far = 100.0f;
+
+const vec3 jello_absorb = vec3(0.8, 0.8, 0.2); // Amount of each color absorbed by the object
+const float reflectivity = 0.01f; // Reflectivity of object
+const float n_air = 1.0029f;
+const float n_obj = 1.0029f;
+
+
+float FresnelReflectAmount (float n1, float n2, vec3 normal, vec3 incident)
+{
+        // Schlick aproximation
+        float r0 = (n1-n2) / (n1+n2);
+        r0 *= r0;
+        float cosX = -dot(normal, incident);
+        if (n1 > n2)
+        {
+            float n = n1/n2;
+            float sinT2 = n*n*(1.0-cosX*cosX);
+            // Total internal reflection
+            if (sinT2 > 1.0)
+                return 1.0;
+            cosX = sqrt(1.0-sinT2);
+        }
+        float x = 1.0-cosX;
+        float ret = r0+(1.0-r0)*x*x*x*x*x;
+ 
+        // adjust reflect multiplier for object reflectivity
+        ret = (reflectivity + (1.0-reflectivity) * ret);
+        return ret;
+}
+
 vec4 HackTransparency()
 {
     vec3 reflect_dir = -reflect(inData.light_dir, inData.normal);
 
-    float spec = max(dot(inData.eye_dir, reflect_dir), 0.0);
+    float fresnel = FresnelReflectAmount(n_air, n_obj, inData.normal, inData.light_dir);
+    fresnel -= 1.0f;
+
+    float spec = max(dot(inData.eye_dir, reflect_dir * fresnel), 0.0);
     spec *= spec;
 
     return (Material.base_color + Material.spec_factor * spec * Material.spec_color) * Light.bg_color;
@@ -56,9 +92,9 @@ void main(void)
         case 1: // Render mesh back faces and store eye-space depth
             if(!gl_FrontFacing)
             {
-                depthVal = vec4(inData.depth.z); // Store eye-space depth
+                depthVal = normalize(inData.depth); // Store eye-space depth
 
-                //fragcolor = vec4(0.85f, 0.25f, 0.25f, 1.0f); // Display solid color temporarily
+                fragcolor = Material.base_color;
             }
             else
             {
@@ -72,14 +108,16 @@ void main(void)
 
                 // Compute thickness
                 vec2 uv = vec2(gl_FragCoord.x / Camera.resolution.x, gl_FragCoord.y / Camera.resolution.y);
-                vec4 thickness = inData.depth - texture(depth_tex, uv);
+                vec3 thickness = abs(normalize(inData.depth) - texture(depth_tex, uv)).xyz;
 
                 // Get refracted background color
+                //vec4 ref_bg_color = Light.bg_color * inverse(transpose(M));
 
                 // Compute Beer's Law for final color
+                vec3 color = min(HackTransparency(), vec4(1.0)).xyz;
+                vec3 absorb = exp(-jello_absorb * thickness);
 
-                //fragcolor = vec4(0.25f, 0.25f, 0.85f, 1.0f); // Display solid color temporarily
-                fragcolor = min(HackTransparency(), vec4(1.0));
+                fragcolor = vec4(color, 1.0);
             }
             else
             {
@@ -89,7 +127,7 @@ void main(void)
         case 4: // Textured Quad
                 vec2 uv = gl_FragCoord.xy / Camera.resolution.x;
                 fragcolor = texture(fbo_tex, uv); // Display FBO texture
-                //fragcolor = texture(depth_tex, uv); // Display depth texture
+                //fragcolor = texture(depth_tex, uv); // Display FBO texture
             break;
         default:
             fragcolor = min(HackTransparency(), vec4(1.0));
