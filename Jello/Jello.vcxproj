@@ -188,7 +188,6 @@
     <ClInclude Include="BoundingBox.h" />
     <ClInclude Include="Cube.h" />
     <ClInclude Include="Camera.h" />
-    <ClInclude Include="Globals.h" />
     <ClInclude Include="Physics.h" />
     <ClInclude Include="MassPoint.h" />
     <ClInclude Include="InitShader.h" />
