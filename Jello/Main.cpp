@@ -316,7 +316,7 @@ void MouseButtonCallback(GLFWwindow* window, int button, int state, int mods) {
         if (moveCam) {
             trackball.Set(window, true, mouseX, mouseY);
         }
-        
+
         mouseLeft = true;
         mouseClickTime = time_sec;
         mouseClickedPos = glm::vec2(mouseX, mouseY); // store clicked pos
@@ -357,12 +357,12 @@ void MouseButtonCallback(GLFWwindow* window, int button, int state, int mods) {
         }
         mouseRight = false;
     }
-    
+}
+
 /// <summary>
 /// Draw transparent scene without FBO
 /// </summary>
-void DrawHackScene()
-{
+void DrawHackScene(){
     glDisable(GL_DEPTH_TEST);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -434,15 +434,15 @@ void display(GLFWwindow* window)
    
    glUseProgram(shader_program);
 
-   if (showBB) {
-       boundingBox->render(1);
-   }
+   //if (showBB) {
+   //    boundingBox->render(1);
+   //}
 
-   myCube->render(1, showDiscrete);
-   if (myCube->fixedFloor) {
-       // show plate
-       myPlate->render(1);
-   }
+   //myCube->render(1, showDiscrete);
+   //if (myCube->fixedFloor) {
+   //    // show plate
+   //    myPlate->render(1);
+   //}
    
 
    //Get location for shader uniform variable
@@ -476,7 +476,7 @@ void display(GLFWwindow* window)
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUniforms), &CameraData); //Upload the new uniform values.
 
     //DrawHackScene(); // Draw hack transparency scene
-    DrawScene(); // Draw proper transparency scene
+   // DrawScene(); // Draw proper transparency scene
 
     if (recording == true)
     {
@@ -772,7 +772,6 @@ int main(int argc, char **argv){
     initOpenGL();
     buildScene();
     mesh_data = LoadMesh(mesh_name);
-
 
     //Init ImGui
     IMGUI_CHECKVERSION();
