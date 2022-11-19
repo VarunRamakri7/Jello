@@ -40,7 +40,7 @@ out layout(location = 1) vec4 depthVal; // Write depth to Color attachment 1
 const float near = 0.1f;
 const float far = 100.0f;
 
-const vec3 jello_absorb = vec3(0.8, 0.1, 0.1); // Amount of each color absorbed by the object
+const vec3 jello_absorb = vec3(0.4, 0.4, 0.1); // Amount of each color absorbed by the object
 const float reflectivity = 0.05f; // Reflectivity of object
 const float n_air = 1.0029f;
 const float n_obj = 1.125f;
@@ -111,13 +111,14 @@ void main(void)
                 vec3 thickness = abs(normalize(inData.depth) - texture(depth_tex, uv)).xyz; // Compute thickness from front face depth and back face depth
 
                 // Get refracted background color
-                //vec4 ref_bg_color = Light.bg_color * inverse(transpose(M));
+                vec4 ref_bg_color = Light.bg_color * inverse(transpose(M));
 
                 // Compute Beer's Law for final color
                 vec3 color = min(HackTransparency(), vec4(1.0)).xyz;
                 vec3 absorb = exp(-jello_absorb * thickness);
 
                 fragcolor = vec4(color * absorb, 1.0);
+                //fragcolor = ref_bg_color;
             }
             else
             {
