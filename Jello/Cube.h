@@ -13,6 +13,9 @@
 
 #include "MassPoint.h"
 
+enum drawType {
+    DRAWPOINT, DRAWTRI
+};
 
 class Cube {
     // jello 
@@ -28,7 +31,7 @@ class Cube {
 
         // render
         glm::mat4 getModelMatrix();
-        void render(GLuint modelParameter, bool showDiscrete);
+        void render(GLuint modelParameter, bool showDiscrete, int drawType);
         int pointSize = 5;
         bool showSpring = false;
         
@@ -45,14 +48,21 @@ class Cube {
         bool fixedFloor = true;
 
         std::vector <MassPoint*> discretePoints{};
-        std::vector <MassPoint*> firstLayer{};
-
+        // faces
+        std::vector <MassPoint*> topFace{};
+        std::vector <MassPoint*> bottomFace{};
+        std::vector <MassPoint*> rightFace{};
+        std::vector <MassPoint*> leftFace{};
+        std::vector <MassPoint*> frontFace{};
+        std::vector <MassPoint*> backFace{};
+        std::vector <std::vector <MassPoint*>*> faces{&topFace, &bottomFace , &rightFace, &leftFace, &frontFace , &backFace };
+       
         void resetAcceleration();
         void setExternalForce(glm::vec3 force);
 
-    private:
+    //private:
         // render
-        GLuint VBO, VAO;
+        GLuint VBO, VAO, texVBO, normalVBO; // position, texture, normal
         std::vector <GLfloat> data {};
         int dataSize = 0;
         glm::mat4 modelMatrix = glm::mat4(1.0f);
@@ -68,6 +78,11 @@ class Cube {
             glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec3(0.5f, -0.5f, 0.5f),
             glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(0.5f, 0.5f, -0.5f), glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec3(0.5f, 0.5f, 0.5f),
         };
+
+        // attribute locations for shaders
+        int posLoc = 0;
+        int texCoordLoc = 1;
+        int normalLoc = 2;
 
 };
 

@@ -30,14 +30,13 @@
 
 #include "Cube.h"
 
-const int init_window_width = 1500;
-const int init_window_height = 1500;
-
-
 const char* const window_title = "Jello";
 
+const int init_window_width = 1500;
+const int init_window_height = 1500;
 int screen_width;
 int screen_height;
+
 static const std::string vertex_shader("template_vs.glsl");
 static const std::string fragment_shader("jello_fs.glsl");
 GLuint shader_program = -1;
@@ -397,12 +396,14 @@ void DrawScene()
 
     // Pass 1: Draw cube back faces and store eye-space depth
     glUniform1i(UniformLocs::pass, BACK_FACES);
-    glBindVertexArray(mesh_data.mVao);
-    glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
+    //glBindVertexArray(mesh_data.mVao);
+    //glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
+    myCube->render(1, showDiscrete, drawType::DRAWTRI);
 
     // Pass 2: Draw cube front faces
     glUniform1i(UniformLocs::pass, FRONT_FACES);
-    glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
+    //glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
+    myCube->render(1, showDiscrete, drawType::DRAWTRI);
 
     // Render textured quad to back buffer
     glUniform1i(UniformLocs::pass, QUAD);
@@ -428,9 +429,9 @@ void display(GLFWwindow* window)
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
    // model matrix
-   glm::mat4 M = myCube->getModelMatrix();
+   //glm::mat4 M = myCube->getModelMatrix();
    // perspective and view matrix
-   glm::mat4 PV = myCamera->getPV() * trackball.Get3DViewCameraMatrix();
+  // glm::mat4 PV = myCamera->getPV() * trackball.Get3DViewCameraMatrix();
    
    glUseProgram(shader_program);
 
@@ -452,16 +453,16 @@ void display(GLFWwindow* window)
 
    draw_gui(window);
 
-    /*glm::mat4 M = glm::rotate(angle, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::vec3(scale * mesh_data.mScaleFactor));
+    glm::mat4 M = glm::rotate(angle, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::vec3(scale * mesh_data.mScaleFactor));
     glm::mat4 V = glm::lookAt(glm::vec3(CameraData.eye), glm::vec3(0.0f), glm::vec3(CameraData.up));
-    glm::mat4 P = glm::perspective(glm::pi<float>() / 4.0f, CameraData.resolution.z, 0.1f, 100.0f);*/
+    glm::mat4 P = glm::perspective(glm::pi<float>() / 4.0f, CameraData.resolution.z, 0.1f, 100.0f);
 
    // glUseProgram(shader_program);
 
     //glBindTexture(2, texture_id);
 
     // Get location for shader uniform variable
-    //glm::mat4 PV = P * V;
+    glm::mat4 PV = P * V;
     glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
         
     glUniformMatrix4fv(UniformLocs::M, 1, false, glm::value_ptr(M));
@@ -476,7 +477,7 @@ void display(GLFWwindow* window)
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUniforms), &CameraData); //Upload the new uniform values.
 
     //DrawHackScene(); // Draw hack transparency scene
-   // DrawScene(); // Draw proper transparency scene
+    DrawScene(); // Draw proper transparency scene
 
     if (recording == true)
     {
@@ -539,7 +540,7 @@ void idle()
        // need to reconstrain since new masspoints are created
        // TODO can we just reset mass point locs? 
        if (myCube->fixedFloor) {
-           myPlate->setConstraintPoints(myCube->firstLayer);
+           myPlate->setConstraintPoints(myCube->bottomFace);
        }
       
    }
@@ -727,11 +728,13 @@ void buildScene() {
     // build scene
     myCamera = new Camera();
     myCamera->setPosition(cameraInitPos);
-    myCube = new Cube(2); // initial cube resolution = 2 
+    myCube = new Cube(3); // initial cube resolution = 2 
     myCube->setSpringMode(true, true, true);
     boundingBox = new BoundingBox(5, 5, 5, glm::vec3(-2, 2, 2.0f));
     myPlate = new Plate(initPlatePos, 2.0);
-    myPlate->setConstraintPoints(myCube->firstLayer);
+    if (myCube->fixedFloor) {
+        myPlate->setConstraintPoints(myCube->bottomFace);
+    }
 }
 
 
@@ -769,6 +772,7 @@ int main(int argc, char **argv){
     glfwSetCursorPosCallback(window, MouseCallback);
     glfwSetMouseButtonCallback(window, MouseButtonCallback);
 
+    GetScreenSize();
     initOpenGL();
     buildScene();
     mesh_data = LoadMesh(mesh_name);

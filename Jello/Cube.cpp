@@ -58,22 +58,73 @@ void Cube::fillDiscretePoints(bool structural, bool shear, bool bend) {
     }
 
     // fill points
-    for (int i = 0; i < this->resolution; i++) {
-        for (int j = 0; j < this->resolution; j++) {
-            for (int k = 0; k < this->resolution; k++) {
+    for (int j = 0; j < this->resolution; j++) {
+        for (int k = 0; k < this->resolution; k++) {
+            for (int i = 0; i < this->resolution; i++) {
+                // i inside so it fills points 
+               /* back
+                    0, 0, 0
+                    0.5, 0, 0
+                    1, 0, 0
+                    0, 0.5, 0
+                    0.5, 0.5, 0
+                    1, 0.5, 0
+                    0, 1, 0
+                    0.5, 1, 0
+                    1, 1, 0
+                    right
+                    1, 0, 0
+                    1, 0, 0.5
+                    1, 0, 1
+                    1, 0.5, 0
+                    1, 0.5, 0.5
+                    1, 0.5, 1
+                    1, 1, 0
+                    1, 1, 0.5
+                    1, 1, 1*/
                 bool isSurface = i * j * k * (maxRes - i) * (maxRes - j) * (maxRes - k) == 0;
+                
                 // store pointers
                 MassPoint* point = new MassPoint(glm::vec3(float(i) / float(maxRes), float(j) / float(maxRes), float(k) / float(maxRes)), isSurface);
-                if (this->fixedFloor && j == 0) {
-                    // like placed on floor (fixed)
-                    // TODO later add collision with plate so it can jiggle off the plate
-                    point->setFixed(true);
-                    firstLayer.push_back(point);
+                
+                // get sides
+                if (isSurface) {
+
+                    // corner/edge points can be in two faces
+                    if (i == 0) {
+                        // left
+                        leftFace.push_back(point);
+                    }
+                    if (i == maxRes) {
+                        // right
+                        rightFace.push_back(point);
+                    }
+                    if (j == 0) {
+                        // bottom
+                        if (this->fixedFloor) {
+                            // like placed on floor (fixed)
+                            // TODO later add collision with plate so it can jiggle off the plate
+
+                            point->setFixed(true);
+                            bottomFace.push_back(point);
+                        }
+                    }
+                    if (j == maxRes) {
+                        // top
+                        topFace.push_back(point);
+                    }
+                    if (k == maxRes) {
+                        // front
+                        frontFace.push_back(point);
+                    }
+                    if (k == 0) {
+                        // back
+                        backFace.push_back(point);
+                    }
                 }
+                
                 discretePoints.push_back(point);
-
                 massPointMap[i][j][k] = point;
-
             }
         }
     }
@@ -123,6 +174,37 @@ void Cube::fillDiscretePoints(bool structural, bool shear, bool bend) {
             }
         }
     }
+
+    std::cout << "front" << std::endl;
+    for (const auto& s : frontFace) {
+        glm::dvec3* pos = s->getPosition();
+        std::cout << pos->x << ", " << pos->y << ", " << pos->z << std::endl;
+    }
+    std::cout << "back" << std::endl;
+    for (const auto& s : backFace) {
+        glm::dvec3* pos = s->getPosition();
+        std::cout << pos->x << ", " << pos->y << ", " << pos->z << std::endl;
+    }
+    std::cout << "right" << std::endl;
+    for (const auto& s : rightFace) {
+        glm::dvec3* pos = s->getPosition();
+        std::cout << pos->x << ", " << pos->y << ", " << pos->z << std::endl;
+    }
+    std::cout << "left" << std::endl;
+    for (const auto& s : leftFace) {
+        glm::dvec3* pos = s->getPosition();
+        std::cout << pos->x << ", " << pos->y << ", " << pos->z << std::endl;
+    }
+    std::cout << "top" << std::endl;
+    for (const auto& s : topFace) {
+        glm::dvec3* pos = s->getPosition();
+        std::cout << pos->x << ", " << pos->y << ", " << pos->z << std::endl;
+    }
+    std::cout << "bottom" << std::endl;
+    for (const auto& s : bottomFace) {
+        glm::dvec3* pos = s->getPosition();
+        std::cout << pos->x << ", " << pos->y << ", " << pos->z << std::endl;
+    }
     
 }
 
@@ -148,42 +230,152 @@ void Cube::setExternalForce(glm::vec3 force) {
     }
 }
 
-void Cube::render(GLuint modelParameter, bool showDiscrete) {
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glEnableVertexAttribArray(0);
+// drawType : 0 = points, 1 = triangles 
+void Cube::render(GLuint modelParameter, bool showDiscrete, int drawType) {
+    
 
-    for (int i = 0; i < this->discretePoints.size(); i++) {
-        MassPoint* massPoint = discretePoints[i];
-        const glm::dvec3* pos = massPoint->getPosition();
+    std::vector <GLfloat> texData{};
+    std::vector <GLfloat> normalData{};
 
-        if (showDiscrete) {
+    if (drawType == drawType::DRAWPOINT) {
+        for (int i = 0; i < this->discretePoints.size(); i++) {
+            MassPoint* massPoint = discretePoints[i];
+            const glm::dvec3* pos = massPoint->getPosition();
 
-            this->data.push_back(pos->x);
-            this->data.push_back(pos->y);
-            this->data.push_back(pos->z);
-
-        }
-        else {
-            // only show surface
-            if (massPoint->isSurfacePoint()) {
+            if (showDiscrete) {
 
                 this->data.push_back(pos->x);
                 this->data.push_back(pos->y);
                 this->data.push_back(pos->z);
+
             }
+            else {
+                // only show surface
+                if (massPoint->isSurfacePoint()) {
+
+                    this->data.push_back(pos->x);
+                    this->data.push_back(pos->y);
+                    this->data.push_back(pos->z);
+                }
+            }
+
         }
         this->dataSize = int(this->data.size());
+        // send data to GPU 
         glBufferData(GL_ARRAY_BUFFER, this->dataSize * sizeof(GLfloat), this->data.data(), GL_DYNAMIC_DRAW);
+        //glUniformMatrix4fv(modelParameter, 1, GL_FALSE, glm::value_ptr(this->modelMatrix));
+
+        // enable point size to have it accessible in shader
+        //glEnable(GL_PROGRAM_POINT_SIZE);
+        glPointSize(this->pointSize);
+        glDrawArrays(GL_POINTS, 0, this->dataSize / 3); // TODO Really? can i divide 3 again? 
+        //glDisable(GL_PROGRAM_POINT_SIZE);
     }
-    //glUniformMatrix4fv(modelParameter, 1, GL_FALSE, glm::value_ptr(this->modelMatrix));
+    else if (drawType == drawType::DRAWTRI) {
+       
+        // draw 2 triangles per square face
+        //(const auto& face : faces)
+        for (int i = 0; i < faces.size(); i++) {
+            std::vector <MassPoint*>* face = faces[i];
+            const int maxSize = face->size();
+            for (int f = 0; f < face->size(); f++) {
+                MassPoint* massPointA;
+                MassPoint* massPointB;
+                MassPoint* massPointC;
+                glm::dvec3* posA; 
+                glm::dvec3* posB;
+                glm::dvec3* posC;
+                glm::vec3 normal;
+                // counter clockwise
+                if ((f + 1) < maxSize && (f + resolution) < maxSize) {
+                    // triangle 1
+                    // point 1 
+                    massPointA = (*face)[f];
+                    posA = massPointA->getPosition();
+                    this->data.push_back(posA->x);
+                    this->data.push_back(posA->y);
+                    this->data.push_back(posA->z);
+                    // point 2
+                    massPointB = (*face)[f + 1];
+                    posB = massPointB->getPosition();
+                    this->data.push_back(posB->x);
+                    this->data.push_back(posB->y);
+                    this->data.push_back(posB->z);
+                    // point 3
+                    massPointC = (*face)[f + resolution];
+                    posC = massPointC->getPosition();
+                    this->data.push_back(posC->x);
+                    this->data.push_back(posC->y);
+                    this->data.push_back(posC->z);
+
+                    // texture 
+                    texData.push_back(0); // u
+                    texData.push_back(0); // v
+
+                    // normal
+                    normal = glm::cross(*posB - *posA, *posC - *posA); // point 2 - point 1  x  point 3 - point 1
+                    normal = glm::normalize(normal);
+                    normalData.push_back(normal.x); // x
+                    normalData.push_back(normal.y); // y
+                    normalData.push_back(normal.z); // z
+                }
+
+                if ((f + 1) < maxSize && (f + resolution) < maxSize && (f + resolution + 1) < maxSize) {
+                    // triangle 2
+                    // point 4
+                    massPointA = (*face)[f + 1];
+                    posA = massPointA->getPosition();
+                    this->data.push_back(posA->x);
+                    this->data.push_back(posA->y);
+                    this->data.push_back(posA->z);
+
+                    // point 5
+                    massPointB = (*face)[f + resolution + 1];
+                    posB = massPointB->getPosition();
+                    this->data.push_back(posB->x);
+                    this->data.push_back(posB->y);
+                    this->data.push_back(posB->z);
+
+                    // point 6
+                    massPointC = (*face)[f + resolution];
+                    posC = massPointC->getPosition();
+                    this->data.push_back(posC->x);
+                    this->data.push_back(posC->y);
+                    this->data.push_back(posC->z);
+
+                    // texture
+                    texData.push_back(i + f); // u
+                    texData.push_back(i + f + 1); // v
+
+                    // normal (TODO: put in func?)
+                    normal = glm::cross(*posB - *posA, *posC - *posA); // point 2 - point 1  x  point 3 - point 1
+                    normal = glm::normalize(normal);
+                    normalData.push_back(normal.x); // x
+                    normalData.push_back(normal.y); // y
+                    normalData.push_back(normal.z); // z
+                }
+            }
+        }
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glEnableVertexAttribArray(posLoc);
+        this->dataSize = int(this->data.size());
+        // send data to GPU 
+        glBufferData(GL_ARRAY_BUFFER, this->dataSize * sizeof(GLfloat), this->data.data(), GL_DYNAMIC_DRAW);
+        
+        glBindBuffer(GL_ARRAY_BUFFER, texVBO);
+        glEnableVertexAttribArray(texCoordLoc);
+        glBufferData(GL_ARRAY_BUFFER, texData.size() * sizeof(GLfloat), texData.data(), GL_DYNAMIC_DRAW);
+
+        glBindBuffer(GL_ARRAY_BUFFER, normalVBO);
+        glEnableVertexAttribArray(normalLoc);
+        glBufferData(GL_ARRAY_BUFFER, normalData.size() * sizeof(GLfloat), normalData.data(), GL_DYNAMIC_DRAW);
+
+
+        glDrawArrays(GL_TRIANGLES, 0, this->dataSize / 3); // TODO Really? can i divide 3 again? 
+    }
 
     this->data.clear();
-    // enable point size to have it accessible in shader
-    //glEnable(GL_PROGRAM_POINT_SIZE);
-    glPointSize(this->pointSize);
-    glDrawArrays(GL_POINTS, 0, this->dataSize / 3); // TODO Really? can i divide 3 again? 
-    //glDisable(GL_PROGRAM_POINT_SIZE);
 
     if (showSpring) {
         // show springs
@@ -247,16 +439,40 @@ void Cube::render(GLuint modelParameter, bool showDiscrete) {
 
 void Cube::initArrays() {
     // init buffers
+    GLint program = -1;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &program);
+
+    // attribute locations
+    glBindAttribLocation(program, posLoc, "pos_attrib");
+    glBindAttribLocation(program, texCoordLoc, "tex_coord_attrib");
+    glBindAttribLocation(program, normalLoc, "normal_attrib");
+
+    // VAO
     glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
     glBindVertexArray(VAO);
+
+    // vertex position 
+    glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(posLoc);
+    glVertexAttribPointer(posLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    
     //this->dataSize = int(this->discretePoints.size());
     // send to GPU
     //glBufferData(GL_ARRAY_BUFFER, this->dataSize * sizeof(GLfloat), this->discretePoints.data(), GL_DYNAMIC_DRAW);
     //this->data.clear();
+
+    // texture 
+    glGenBuffers(1, &texVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, texVBO);
+    glEnableVertexAttribArray(texCoordLoc);
+    glVertexAttribPointer(texCoordLoc, 2, GL_FLOAT, 0, 0, 0);
+
+    // normal 
+    glGenBuffers(1, &normalVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, normalVBO);
+    glEnableVertexAttribArray(normalLoc);
+    glVertexAttribPointer(normalLoc, 3, GL_FLOAT, 0, 0, 0);
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);

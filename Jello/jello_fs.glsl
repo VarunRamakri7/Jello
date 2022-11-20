@@ -92,7 +92,7 @@ void main(void)
         case 1: // Render mesh back faces and store eye-space depth
             if(!gl_FrontFacing)
             {
-                depthVal = normalize(inData.depth); // Store eye-space depth
+                depthVal = vec4(1.0,0.0,0.0,1.0);//normalize(inData.depth); // Store eye-space depth
 
                 fragcolor = Material.base_color;
             }
