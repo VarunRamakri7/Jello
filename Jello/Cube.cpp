@@ -25,6 +25,7 @@ void Cube::reset() {
 }
 
 void Cube::addConnection(MassPoint **** massPointMap, MassPoint* point, int i, int j, int k) {
+    // for surface nodes, some of these neighbors might not exists
     if (i < resolution && j < resolution && k < resolution && i >= 0 && j >= 0 && k >= 0) {
         point->addConnection(massPointMap[i][j][k]);
     }
@@ -61,27 +62,29 @@ void Cube::fillDiscretePoints(bool structural, bool shear, bool bend) {
     for (int j = 0; j < this->resolution; j++) {
         for (int k = 0; k < this->resolution; k++) {
             for (int i = 0; i < this->resolution; i++) {
-                // i inside so it fills points 
-               /* back
-                    0, 0, 0
-                    0.5, 0, 0
-                    1, 0, 0
-                    0, 0.5, 0
-                    0.5, 0.5, 0
-                    1, 0.5, 0
-                    0, 1, 0
-                    0.5, 1, 0
-                    1, 1, 0
+                // i inside so it fills points along the x axis first, then z then y 
+                /* EXAMPLE:
+                    back
+                        0, 0, 0
+                        0.5, 0, 0
+                        1, 0, 0
+                        0, 0.5, 0
+                        0.5, 0.5, 0
+                        1, 0.5, 0
+                        0, 1, 0
+                        0.5, 1, 0
+                        1, 1, 0
                     right
-                    1, 0, 0
-                    1, 0, 0.5
-                    1, 0, 1
-                    1, 0.5, 0
-                    1, 0.5, 0.5
-                    1, 0.5, 1
-                    1, 1, 0
-                    1, 1, 0.5
-                    1, 1, 1*/
+                        1, 0, 0
+                        1, 0, 0.5
+                        1, 0, 1
+                        1, 0.5, 0
+                        1, 0.5, 0.5
+                        1, 0.5, 1
+                        1, 1, 0
+                        1, 1, 0.5
+                        1, 1, 1
+                */
                 bool isSurface = i * j * k * (maxRes - i) * (maxRes - j) * (maxRes - k) == 0;
                 
                 // store pointers
@@ -102,12 +105,9 @@ void Cube::fillDiscretePoints(bool structural, bool shear, bool bend) {
                     if (j == 0) {
                         // bottom
                         if (this->fixedFloor) {
-                            // like placed on floor (fixed)
-                            // TODO later add collision with plate so it can jiggle off the plate
-
                             point->setFixed(true);
-                            bottomFace.push_back(point);
                         }
+                        bottomFace.push_back(point);
                     }
                     if (j == maxRes) {
                         // top
@@ -128,20 +128,20 @@ void Cube::fillDiscretePoints(bool structural, bool shear, bool bend) {
             }
         }
     }
+
     for (int i = 0; i < this->resolution; i++) {
         for (int j = 0; j < this->resolution; j++) {
             for (int k = 0; k < this->resolution; k++) {
                 MassPoint* point = massPointMap[i][j][k];
 
                 if (structural) {
-                    /*Node(i, j, k) connected to
-                        (i + 1, j, k), (i - 1, j, k), (i, j - 1, k), (i, j + 1, k), (i, j, k - 1), (i, j, k + 1)
-                        (for surface nodes, some of these neighbors might not exists)*/
-
+                    /* Node(i, j, k) connected to
+                        (i + 1, j, k), (i - 1, j, k), (i, j - 1, k), 
+                        (i, j + 1, k), (i, j, k - 1), (i, j, k + 1)
+                    */
                     addConnection(massPointMap, point, i + 1, j, k);
                     addConnection(massPointMap, point, i, j + 1, k);
                     addConnection(massPointMap, point, i, j, k + 1);
-                    
                 }
 
                 if (shear) {
@@ -168,42 +168,10 @@ void Cube::fillDiscretePoints(bool structural, bool shear, bool bend) {
                     addConnection(massPointMap, point, i + 2, j, k);
                     addConnection(massPointMap, point, i, j + 2, k);
                     addConnection(massPointMap, point, i, j, k + 2);
-
                 }
 
             }
         }
-    }
-
-    std::cout << "front" << std::endl;
-    for (const auto& s : frontFace) {
-        glm::dvec3* pos = s->getPosition();
-        std::cout << pos->x << ", " << pos->y << ", " << pos->z << std::endl;
-    }
-    std::cout << "back" << std::endl;
-    for (const auto& s : backFace) {
-        glm::dvec3* pos = s->getPosition();
-        std::cout << pos->x << ", " << pos->y << ", " << pos->z << std::endl;
-    }
-    std::cout << "right" << std::endl;
-    for (const auto& s : rightFace) {
-        glm::dvec3* pos = s->getPosition();
-        std::cout << pos->x << ", " << pos->y << ", " << pos->z << std::endl;
-    }
-    std::cout << "left" << std::endl;
-    for (const auto& s : leftFace) {
-        glm::dvec3* pos = s->getPosition();
-        std::cout << pos->x << ", " << pos->y << ", " << pos->z << std::endl;
-    }
-    std::cout << "top" << std::endl;
-    for (const auto& s : topFace) {
-        glm::dvec3* pos = s->getPosition();
-        std::cout << pos->x << ", " << pos->y << ", " << pos->z << std::endl;
-    }
-    std::cout << "bottom" << std::endl;
-    for (const auto& s : bottomFace) {
-        glm::dvec3* pos = s->getPosition();
-        std::cout << pos->x << ", " << pos->y << ", " << pos->z << std::endl;
     }
     
 }
@@ -239,16 +207,17 @@ void Cube::render(GLuint modelParameter, bool showDiscrete, int drawType) {
     int dataSize;
 
     if (drawType == drawType::DRAWPOINT) {
+        // only draw point can show discrete points 
+
         for (int i = 0; i < this->discretePoints.size(); i++) {
             MassPoint* massPoint = discretePoints[i];
             const glm::dvec3* pos = massPoint->getPosition();
 
             if (showDiscrete) {
-
+                // show mass points inside the surface
                 data.push_back(pos->x);
                 data.push_back(pos->y);
                 data.push_back(pos->z);
-
             }
             else {
                 // only show surface
@@ -261,16 +230,18 @@ void Cube::render(GLuint modelParameter, bool showDiscrete, int drawType) {
             }
 
         }
+
+        // send data to GPU 
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glEnableVertexAttribArray(posLoc);
         dataSize = data.size();
         // send data to GPU 
-        glBufferData(GL_ARRAY_BUFFER, dataSize * sizeof(GLfloat), data.data(), GL_DYNAMIC_DRAW);
-        //glUniformMatrix4fv(modelParameter, 1, GL_FALSE, glm::value_ptr(this->modelMatrix));
-
-        // enable point size to have it accessible in shader
-        //glEnable(GL_PROGRAM_POINT_SIZE);
+        glBufferData(GL_ARRAY_BUFFER, dataSize * sizeof(GLfloat), data.data(), GL_STATIC_DRAW);
+        //glVertexAttribPointer(posLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+        //glBufferData(GL_ARRAY_BUFFER, dataSize * sizeof(GLfloat), data.data(), GL_DYNAMIC_DRAW);
         glPointSize(this->pointSize);
-        glDrawArrays(GL_POINTS, 0, dataSize / 3); // TODO Really? can i divide 3 again? 
-        //glDisable(GL_PROGRAM_POINT_SIZE);
+        glDrawArrays(GL_POINTS, 0, dataSize / 3); 
     }
     else if (drawType == drawType::DRAWTRI) {
        
@@ -355,12 +326,12 @@ void Cube::render(GLuint modelParameter, bool showDiscrete, int drawType) {
                     data.push_back(posC->z);
 
                     // texture
-                    texData.push_back(i + f); // u
-                    texData.push_back(i + f + 1); // v
-                    texData.push_back(i + f); // u
-                    texData.push_back(i + f + 1); // v
-                    texData.push_back(i + f); // u
-                    texData.push_back(i + f + 1); // v
+                    texData.push_back(0); // u
+                    texData.push_back(0); // v
+                    texData.push_back(0); // u
+                    texData.push_back(0); // v
+                    texData.push_back(0); // u
+                    texData.push_back(0); // v
 
                     // normal (TODO: put in func?)
                     normal = glm::cross(*posB - *posA, *posC - *posA); // point 2 - point 1  x  point 3 - point 1
@@ -383,17 +354,14 @@ void Cube::render(GLuint modelParameter, bool showDiscrete, int drawType) {
         dataSize = data.size();
         // send data to GPU 
         glBufferData(GL_ARRAY_BUFFER, dataSize * sizeof(GLfloat), data.data(), GL_STATIC_DRAW);
-        //glVertexAttribPointer(posLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
         glBindBuffer(GL_ARRAY_BUFFER, texVBO);
-       glEnableVertexAttribArray(texCoordLoc);
+        glEnableVertexAttribArray(texCoordLoc);
         glBufferData(GL_ARRAY_BUFFER, texData.size() * sizeof(GLfloat), texData.data(), GL_STATIC_DRAW);
-        //glVertexAttribPointer(texCoordLoc, 2, GL_FLOAT, 0, 0, 0);
         
         glBindBuffer(GL_ARRAY_BUFFER, normalVBO);
         glEnableVertexAttribArray(normalLoc);
         glBufferData(GL_ARRAY_BUFFER, normalData.size() * sizeof(GLfloat), normalData.data(), GL_STATIC_DRAW);
-        //glVertexAttribPointer(normalLoc, 3, GL_FLOAT, 0, 0, 0);
 
         glDrawArrays(GL_TRIANGLES, 0, dataSize / 3); // TODO Really? can i divide 3 again? 
     }
@@ -449,14 +417,11 @@ void Cube::render(GLuint modelParameter, bool showDiscrete, int drawType) {
                     }
                 }
             }
-            dataSize = int(data.size());
-            glBufferData(GL_ARRAY_BUFFER, dataSize * sizeof(GLfloat), data.data(), GL_DYNAMIC_DRAW);
         }
-        //glUniformMatrix4fv(modelParameter, 1, GL_FALSE, glm::value_ptr(this->modelMatrix));
 
+        dataSize = int(data.size());
+        glBufferData(GL_ARRAY_BUFFER, dataSize * sizeof(GLfloat), data.data(), GL_DYNAMIC_DRAW);
         data.clear();
-        // enable point size to have it accessible in shader
-        //glEnable(GL_PROGRAM_POINT_SIZE);
         glPointSize(this->pointSize);
         glDrawArrays(GL_LINES, 0, dataSize / 3); // TODO Really? can i divide 3 again? 
     }

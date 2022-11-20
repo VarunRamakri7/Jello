@@ -391,10 +391,6 @@ void DrawScene()
     const glm::mat4 P = glm::perspective(glm::pi<float>() / 4.0f, CameraData.resolution.z, cameraNear, cameraFar);
     const glm::mat4 PV = P * V *trackball.Get3DViewCameraMatrix();
 
-    // glUseProgram(shader_program);
-
-     //glBindTexture(2, texture_id);
-
      // Get location for shader uniform variable
 
     glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
@@ -415,13 +411,10 @@ void DrawScene()
 
     // Pass 1: Draw cube back faces and store eye-space depth
     glUniform1i(UniformLocs::pass, BACK_FACES);
-    //glBindVertexArray(mesh_data.mVao);
-    //glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
     myCube->render(1, showDiscrete, drawType::DRAWTRI);
 
     // Pass 2: Draw cube front faces
     glUniform1i(UniformLocs::pass, FRONT_FACES);
-    //glDrawElements(GL_TRIANGLES, mesh_data.mSubmesh[0].mNumIndices, GL_UNSIGNED_INT, 0);
     myCube->render(1, showDiscrete, drawType::DRAWTRI);
 
     // Render textured quad to back buffer
@@ -443,12 +436,22 @@ void DrawScene()
 
     if (debugMode) {
         glUseProgram(debug_shader_program);
-        glViewport(0, 0, screen_width, screen_height);
+        // draw onto viewport's regular size (window size) 
+        // actually should draw to max size
+
+        glViewport(0, 0, CameraData.resolution.x, CameraData.resolution.y);
+        /*int PVM_loc = glGetUniformLocation(debug_shader_program, "PVM");
+        glUniformMatrix4fv(PVM_loc, 1, false, glm::value_ptr(PVM));*/
+
+        // draw on top 
         // NEED TO CONNECT THE RIGHT THINGS AGAIN 
         glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
         glUniformMatrix4fv(UniformLocs::M, 1, false, glm::value_ptr(M));
+
+
         myCube->render(1, showDiscrete, drawType::DRAWPOINT);
     }
+
 }
 
 // This function gets called every time the scene gets redisplayed

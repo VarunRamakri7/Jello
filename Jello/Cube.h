@@ -47,6 +47,8 @@ class Cube {
         bool bendSpring;
         bool fixedFloor = true;
 
+        // mass points will be stored in discretePoints list but also per faces 
+        // faces only store surface points 
         std::vector <MassPoint*> discretePoints{};
         // faces
         std::vector <MassPoint*> topFace{};
