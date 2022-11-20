@@ -22,7 +22,6 @@
 #include "VideoMux.h"      //Functions for saving videos
 #include "trackball.h"
 #include "BoundingBox.h"
-#include "Camera.h"
 #include "Physics.h"
 #include "Plate.h"
 
@@ -32,14 +31,16 @@
 
 const char* const window_title = "Jello";
 
-const int init_window_width = 1500;
-const int init_window_height = 1500;
-int screen_width;
+int screen_width; // max for resize
 int screen_height;
 
 static const std::string vertex_shader("template_vs.glsl");
 static const std::string fragment_shader("jello_fs.glsl");
+static const std::string debug_vertex_shader("debug_vs.glsl");
+static const std::string debug_fragment_shader("template_fs.glsl");
+
 GLuint shader_program = -1;
+GLuint debug_shader_program = -1;
 float time_sec;
 
 GLuint FBO; // Frame buffer object
@@ -71,8 +72,10 @@ const float bg_vertices[] =
     -1.0f, 1.0f,    0.0f, 1.0f
 };
 
+float cameraNear = 0.01f;
+float cameraFar = 100.f;
 struct CameraUniforms {
-    glm::vec4 eye = glm::vec4(0.0f, 2.5f, 3.0f, 0.0f);
+    glm::vec4 eye = glm::vec4(0.0f, 2.5f, 5.0f, 0.0f);
     glm::vec4 up = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
     glm::vec4 resolution = glm::vec4(800.0f, 800.0f, 1.0f, 0.0f); // Width, Height, Aspect Ratio
 }CameraData;
@@ -135,6 +138,7 @@ bool movePlate = false; // if user holds "p" on the keyboard, will make this tru
 // display
 bool showDiscrete = false;
 bool showBB = true; // show bounding box
+bool debugMode = false;
 
 // physics
 glm::vec3 gravity = glm::vec3(0.0, -9.8, 0.0); // acceleration 
@@ -154,10 +158,7 @@ bool needReset = false;
 // scene
 Cube* myCube;
 Plate* myPlate;
-Camera* myCamera;
 BoundingBox* boundingBox;
-
-const glm::vec3 cameraInitPos = glm::vec3(0.0f, 0.0f, 5.0f);
 glm::dvec3 initPlatePos = glm::dvec3(0.5, 0.0, 0.5);
 
 
@@ -205,6 +206,7 @@ void draw_gui(GLFWwindow* window)
 
    // display
    ImGui::Text("Display");
+   ImGui::Checkbox("Debug Mode", &debugMode);
    ImGui::Checkbox("Show discrete", &showDiscrete);
    ImGui::Checkbox("Show bounding box", &showBB);
    ImGui::SliderInt("Particle Size", &myCube->pointSize, 1, 10);
@@ -236,7 +238,7 @@ void draw_gui(GLFWwindow* window)
 
    ImGui::Begin("Camera");
 
-   ImGui::SliderFloat3("Camera Eye", &CameraData.eye.x, -10.0f, 10.0f);
+   //ImGui::SliderFloat3("Camera Eye", &CameraData.eye.x, -10.0f, 10.0f);
 
    ImGui::Image((void*)fbo_tex, ImVec2(128.0f, 128.0f), ImVec2(0.0, 1.0), ImVec2(1.0, 0.0)); ImGui::SameLine(); // Show FBO texture
    ImGui::Image((void*)depth_tex, ImVec2(128.0f, 128.0f), ImVec2(0.0, 1.0), ImVec2(1.0, 0.0)); // Show depth texture
@@ -268,16 +270,19 @@ void getWorld(glm::vec2 mouse, glm::vec4& world) {
     glReadPixels(mouse[0], mouse[1], 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
 
     // scale to NDC: -1 <> 1
-    float x_NDC = (mouse[0] * 2.0f / init_window_width) - 1.0f;
-    float y_NDC = (mouse[1] * 2.0f / init_window_height) - 1.0f;
-    float z_NDC = (depth - myCamera->nearf) / (myCamera->farf - myCamera->nearf);  
+    float x_NDC = (mouse[0] * 2.0f / CameraData.resolution.x) - 1.0f;
+    float y_NDC = (mouse[1] * 2.0f / CameraData.resolution.y) - 1.0f;
+    float z_NDC = (depth - cameraNear) / (cameraFar - cameraNear);
     z_NDC = 2 * z_NDC - 1; 
     // into homogeneous coord
     glm::vec4 ndcCoord = glm::vec4(x_NDC, y_NDC, z_NDC, 1.0f);
     // clip space
     glm::vec4 clip = ndcCoord / ndcCoord.w;
 
-    glm::mat4 PV = myCamera->getPV();// *trackball.Get3DViewCameraMatrix();
+    // camera always looking at the center 
+    glm::mat4 V = glm::lookAt(glm::vec3(CameraData.eye), glm::vec3(0.0f), glm::vec3(CameraData.up));
+    glm::mat4 P = glm::perspective(glm::pi<float>() / 4.0f, CameraData.resolution.z, cameraNear, cameraFar);
+    glm::mat4 PV = P * V;// *trackball.Get3DViewCameraMatrix();
     // TODO get plate model's mat? but now its identity cos we change hte pixels 
     glm::mat4 invPV = glm::inverse(PV);
 
@@ -381,6 +386,20 @@ void DrawHackScene(){
 /// </summary>
 void DrawScene()
 {
+    const glm::mat4 M = glm::rotate(angle, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::vec3(scale * myCube->scale));
+    const glm::mat4 V = glm::lookAt(glm::vec3(CameraData.eye), glm::vec3(0.0f), glm::vec3(CameraData.up));
+    const glm::mat4 P = glm::perspective(glm::pi<float>() / 4.0f, CameraData.resolution.z, cameraNear, cameraFar);
+    const glm::mat4 PV = P * V *trackball.Get3DViewCameraMatrix();
+
+    // glUseProgram(shader_program);
+
+     //glBindTexture(2, texture_id);
+
+     // Get location for shader uniform variable
+
+    glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
+    glUniformMatrix4fv(UniformLocs::M, 1, false, glm::value_ptr(M));
+
     // Pass 0: Draw background
     glUniform1i(UniformLocs::pass, BACKGROUND);
 
@@ -419,7 +438,17 @@ void DrawScene()
     glDisable(GL_DEPTH_TEST);
 
     glBindVertexArray(attribless_vao);
+    glViewport(0, 0, screen_width, screen_height);
     draw_attribless_quad();
+
+    if (debugMode) {
+        glUseProgram(debug_shader_program);
+        glViewport(0, 0, screen_width, screen_height);
+        // NEED TO CONNECT THE RIGHT THINGS AGAIN 
+        glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
+        glUniformMatrix4fv(UniformLocs::M, 1, false, glm::value_ptr(M));
+        myCube->render(1, showDiscrete, drawType::DRAWPOINT);
+    }
 }
 
 // This function gets called every time the scene gets redisplayed
@@ -453,19 +482,7 @@ void display(GLFWwindow* window)
 
    draw_gui(window);
 
-    glm::mat4 M = glm::rotate(angle, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::vec3(scale * mesh_data.mScaleFactor));
-    glm::mat4 V = glm::lookAt(glm::vec3(CameraData.eye), glm::vec3(0.0f), glm::vec3(CameraData.up));
-    glm::mat4 P = glm::perspective(glm::pi<float>() / 4.0f, CameraData.resolution.z, 0.1f, 100.0f);
-
-   // glUseProgram(shader_program);
-
-    //glBindTexture(2, texture_id);
-
-    // Get location for shader uniform variable
-    glm::mat4 PV = P * V;
-    glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
-        
-    glUniformMatrix4fv(UniformLocs::M, 1, false, glm::value_ptr(M));
+    
 
     glBindBuffer(GL_UNIFORM_BUFFER, material_ubo); //Bind the OpenGL UBO before we update the data.
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(MaterialUniforms), &MaterialData); //Upload the new uniform values.
@@ -560,8 +577,9 @@ void idle()
 void reload_shader()
 {
     GLuint new_shader = InitShader(vertex_shader.c_str(), fragment_shader.c_str());
+    GLuint new_debug_shader = InitShader(debug_vertex_shader.c_str(), debug_fragment_shader.c_str());
 
-    if (new_shader == -1) // loading failed
+    if (new_shader == -1 || new_debug_shader == -1) // loading failed
     {
         glClearColor(1.0f, 0.0f, 1.0f, 0.0f); //change clear color if shader can't be compiled
     }
@@ -573,7 +591,12 @@ void reload_shader()
         {
             glDeleteProgram(shader_program);
         }
+        if (debug_shader_program != -1)
+        {
+            glDeleteProgram(debug_shader_program);
+        }
         shader_program = new_shader;
+        debug_shader_program = new_debug_shader;
     }
 }
 
@@ -633,7 +656,6 @@ void resize(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height); // Set viewport to cover entire framebuffer
     CameraData.resolution = glm::vec4(width, height, width / height, 0.0f);
-    //CameraData.aspect = float(width) / float(height); // Set aspect ratio
 }
 
 //Initialize OpenGL state. This function only gets called once.
@@ -727,8 +749,6 @@ void initOpenGL()
 
 void buildScene() {
     // build scene
-    myCamera = new Camera();
-    myCamera->setPosition(cameraInitPos);
     myCube = new Cube(3); // initial cube resolution = 2 
     myCube->setSpringMode(true, true, true);
     boundingBox = new BoundingBox(5, 5, 5, glm::vec3(-2, 2, 2.0f));
@@ -759,7 +779,7 @@ int main(int argc, char **argv){
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(init_window_width, init_window_height, window_title, NULL, NULL);
+    window = glfwCreateWindow(CameraData.resolution.x, CameraData.resolution.y, window_title, NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -772,11 +792,11 @@ int main(int argc, char **argv){
     glfwSetKeyCallback(window, keyboard);
     glfwSetCursorPosCallback(window, MouseCallback);
     glfwSetMouseButtonCallback(window, MouseButtonCallback);
+    glfwSetFramebufferSizeCallback(window, resize);
 
     GetScreenSize();
     initOpenGL();
     buildScene();
-    mesh_data = LoadMesh(mesh_name);
 
     //Init ImGui
     IMGUI_CHECKVERSION();
