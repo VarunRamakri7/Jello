@@ -88,11 +88,12 @@ void main(void)
     {
         case 0: // Render Background
             fragcolor = Light.bg_color;
+            depthVal = vec4(0.0f);
             break;
         case 1: // Render mesh back faces and store eye-space depth
             if(!gl_FrontFacing)
             {
-                depthVal = vec4(1.0,0.0,0.0,1.0);//normalize(inData.depth); // Store eye-space depth
+                depthVal = normalize(inData.depth); // Store eye-space depth
 
                 fragcolor = Material.base_color;
             }
@@ -135,4 +136,5 @@ void main(void)
     }
 
 	//fragcolor = vec4(inData.normal, 1.0f); // Color as normals
+    //fragcolor = vec4(1.0, 0.0, 0.0, 1.0f);
 }

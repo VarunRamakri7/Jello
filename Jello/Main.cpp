@@ -59,7 +59,7 @@ MeshData mesh_data;
 
 GLuint bg_vao = -1;
 GLuint bg_vbo = -1;
-float bg_vertices[] =
+const float bg_vertices[] =
 {
     // Coords       // Tex coords
     1.0f, -1.0f,    1.0f, 0.0f,
@@ -716,6 +716,7 @@ void initOpenGL()
     glBufferData(GL_ARRAY_BUFFER, sizeof(bg_vertices), bg_vertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    // why need the next 2 lines? 
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 

@@ -63,8 +63,6 @@ class Cube {
     //private:
         // render
         GLuint VBO, VAO, texVBO, normalVBO; // position, texture, normal
-        std::vector <GLfloat> data {};
-        int dataSize = 0;
         glm::mat4 modelMatrix = glm::mat4(1.0f);
 
         void initArrays();
@@ -80,9 +78,9 @@ class Cube {
         };
 
         // attribute locations for shaders
-        int posLoc = 0;
-        int texCoordLoc = 1;
-        int normalLoc = 2;
+        const int posLoc = 0;
+        const int texCoordLoc = 1;
+        const int normalLoc = 2;
 
 };
 

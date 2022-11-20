@@ -232,10 +232,11 @@ void Cube::setExternalForce(glm::vec3 force) {
 
 // drawType : 0 = points, 1 = triangles 
 void Cube::render(GLuint modelParameter, bool showDiscrete, int drawType) {
-    
 
+    std::vector <GLfloat> data{};
     std::vector <GLfloat> texData{};
     std::vector <GLfloat> normalData{};
+    int dataSize;
 
     if (drawType == drawType::DRAWPOINT) {
         for (int i = 0; i < this->discretePoints.size(); i++) {
@@ -244,31 +245,31 @@ void Cube::render(GLuint modelParameter, bool showDiscrete, int drawType) {
 
             if (showDiscrete) {
 
-                this->data.push_back(pos->x);
-                this->data.push_back(pos->y);
-                this->data.push_back(pos->z);
+                data.push_back(pos->x);
+                data.push_back(pos->y);
+                data.push_back(pos->z);
 
             }
             else {
                 // only show surface
                 if (massPoint->isSurfacePoint()) {
 
-                    this->data.push_back(pos->x);
-                    this->data.push_back(pos->y);
-                    this->data.push_back(pos->z);
+                    data.push_back(pos->x);
+                    data.push_back(pos->y);
+                    data.push_back(pos->z);
                 }
             }
 
         }
-        this->dataSize = int(this->data.size());
+        dataSize = data.size();
         // send data to GPU 
-        glBufferData(GL_ARRAY_BUFFER, this->dataSize * sizeof(GLfloat), this->data.data(), GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, dataSize * sizeof(GLfloat), data.data(), GL_DYNAMIC_DRAW);
         //glUniformMatrix4fv(modelParameter, 1, GL_FALSE, glm::value_ptr(this->modelMatrix));
 
         // enable point size to have it accessible in shader
         //glEnable(GL_PROGRAM_POINT_SIZE);
         glPointSize(this->pointSize);
-        glDrawArrays(GL_POINTS, 0, this->dataSize / 3); // TODO Really? can i divide 3 again? 
+        glDrawArrays(GL_POINTS, 0, dataSize / 3); // TODO Really? can i divide 3 again? 
         //glDisable(GL_PROGRAM_POINT_SIZE);
     }
     else if (drawType == drawType::DRAWTRI) {
@@ -292,29 +293,39 @@ void Cube::render(GLuint modelParameter, bool showDiscrete, int drawType) {
                     // point 1 
                     massPointA = (*face)[f];
                     posA = massPointA->getPosition();
-                    this->data.push_back(posA->x);
-                    this->data.push_back(posA->y);
-                    this->data.push_back(posA->z);
+                    data.push_back(posA->x);
+                    data.push_back(posA->y);
+                    data.push_back(posA->z);
                     // point 2
                     massPointB = (*face)[f + 1];
                     posB = massPointB->getPosition();
-                    this->data.push_back(posB->x);
-                    this->data.push_back(posB->y);
-                    this->data.push_back(posB->z);
+                    data.push_back(posB->x);
+                    data.push_back(posB->y);
+                    data.push_back(posB->z);
                     // point 3
                     massPointC = (*face)[f + resolution];
                     posC = massPointC->getPosition();
-                    this->data.push_back(posC->x);
-                    this->data.push_back(posC->y);
-                    this->data.push_back(posC->z);
+                    data.push_back(posC->x);
+                    data.push_back(posC->y);
+                    data.push_back(posC->z);
 
                     // texture 
+                    texData.push_back(0); // u
+                    texData.push_back(0); // v
+                    texData.push_back(0); // u
+                    texData.push_back(0); // v
                     texData.push_back(0); // u
                     texData.push_back(0); // v
 
                     // normal
                     normal = glm::cross(*posB - *posA, *posC - *posA); // point 2 - point 1  x  point 3 - point 1
                     normal = glm::normalize(normal);
+                    normalData.push_back(normal.x); // x
+                    normalData.push_back(normal.y); // y
+                    normalData.push_back(normal.z); // z
+                    normalData.push_back(normal.x); // x
+                    normalData.push_back(normal.y); // y
+                    normalData.push_back(normal.z); // z 
                     normalData.push_back(normal.x); // x
                     normalData.push_back(normal.y); // y
                     normalData.push_back(normal.z); // z
@@ -325,25 +336,29 @@ void Cube::render(GLuint modelParameter, bool showDiscrete, int drawType) {
                     // point 4
                     massPointA = (*face)[f + 1];
                     posA = massPointA->getPosition();
-                    this->data.push_back(posA->x);
-                    this->data.push_back(posA->y);
-                    this->data.push_back(posA->z);
+                    data.push_back(posA->x);
+                    data.push_back(posA->y);
+                    data.push_back(posA->z);
 
                     // point 5
                     massPointB = (*face)[f + resolution + 1];
                     posB = massPointB->getPosition();
-                    this->data.push_back(posB->x);
-                    this->data.push_back(posB->y);
-                    this->data.push_back(posB->z);
+                    data.push_back(posB->x);
+                    data.push_back(posB->y);
+                    data.push_back(posB->z);
 
                     // point 6
                     massPointC = (*face)[f + resolution];
                     posC = massPointC->getPosition();
-                    this->data.push_back(posC->x);
-                    this->data.push_back(posC->y);
-                    this->data.push_back(posC->z);
+                    data.push_back(posC->x);
+                    data.push_back(posC->y);
+                    data.push_back(posC->z);
 
                     // texture
+                    texData.push_back(i + f); // u
+                    texData.push_back(i + f + 1); // v
+                    texData.push_back(i + f); // u
+                    texData.push_back(i + f + 1); // v
                     texData.push_back(i + f); // u
                     texData.push_back(i + f + 1); // v
 
@@ -353,29 +368,39 @@ void Cube::render(GLuint modelParameter, bool showDiscrete, int drawType) {
                     normalData.push_back(normal.x); // x
                     normalData.push_back(normal.y); // y
                     normalData.push_back(normal.z); // z
+                    normalData.push_back(normal.x); // x
+                    normalData.push_back(normal.y); // y
+                    normalData.push_back(normal.z); // z 
+                    normalData.push_back(normal.x); // x
+                    normalData.push_back(normal.y); // y
+                    normalData.push_back(normal.z); // z
                 }
             }
         }
         glBindVertexArray(VAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glEnableVertexAttribArray(posLoc);
-        this->dataSize = int(this->data.size());
+        dataSize = data.size();
         // send data to GPU 
-        glBufferData(GL_ARRAY_BUFFER, this->dataSize * sizeof(GLfloat), this->data.data(), GL_DYNAMIC_DRAW);
-        
-        glBindBuffer(GL_ARRAY_BUFFER, texVBO);
-        glEnableVertexAttribArray(texCoordLoc);
-        glBufferData(GL_ARRAY_BUFFER, texData.size() * sizeof(GLfloat), texData.data(), GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, dataSize * sizeof(GLfloat), data.data(), GL_STATIC_DRAW);
+        //glVertexAttribPointer(posLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
+        glBindBuffer(GL_ARRAY_BUFFER, texVBO);
+       glEnableVertexAttribArray(texCoordLoc);
+        glBufferData(GL_ARRAY_BUFFER, texData.size() * sizeof(GLfloat), texData.data(), GL_STATIC_DRAW);
+        //glVertexAttribPointer(texCoordLoc, 2, GL_FLOAT, 0, 0, 0);
+        
         glBindBuffer(GL_ARRAY_BUFFER, normalVBO);
         glEnableVertexAttribArray(normalLoc);
-        glBufferData(GL_ARRAY_BUFFER, normalData.size() * sizeof(GLfloat), normalData.data(), GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, normalData.size() * sizeof(GLfloat), normalData.data(), GL_STATIC_DRAW);
+        //glVertexAttribPointer(normalLoc, 3, GL_FLOAT, 0, 0, 0);
 
-
-        glDrawArrays(GL_TRIANGLES, 0, this->dataSize / 3); // TODO Really? can i divide 3 again? 
+        glDrawArrays(GL_TRIANGLES, 0, dataSize / 3); // TODO Really? can i divide 3 again? 
     }
 
-    this->data.clear();
+    data.clear();
+    texData.clear();
+    normalData.clear();
 
     if (showSpring) {
         // show springs
@@ -389,15 +414,15 @@ void Cube::render(GLuint modelParameter, bool showDiscrete, int drawType) {
                 for (int c = 0; c < cc; c++) {
                     MassPoint* connection = massPoint->getConnection(c);
 
-                    this->data.push_back(pos->x);
-                    this->data.push_back(pos->y);
-                    this->data.push_back(pos->z);
+                    data.push_back(pos->x);
+                    data.push_back(pos->y);
+                    data.push_back(pos->z);
 
                     const glm::dvec3* cpos = connection->getPosition();
 
-                    this->data.push_back(cpos->x);
-                    this->data.push_back(cpos->y);
-                    this->data.push_back(cpos->z);
+                    data.push_back(cpos->x);
+                    data.push_back(cpos->y);
+                    data.push_back(cpos->z);
                 }
 
             }
@@ -411,29 +436,29 @@ void Cube::render(GLuint modelParameter, bool showDiscrete, int drawType) {
 
                         if (connection->isSurfacePoint()) {
 
-                            this->data.push_back(pos->x);
-                            this->data.push_back(pos->y);
-                            this->data.push_back(pos->z);
+                            data.push_back(pos->x);
+                            data.push_back(pos->y);
+                            data.push_back(pos->z);
 
                             const glm::dvec3* cpos = connection->getPosition();
 
-                            this->data.push_back(cpos->x);
-                            this->data.push_back(cpos->y);
-                            this->data.push_back(cpos->z);
+                            data.push_back(cpos->x);
+                            data.push_back(cpos->y);
+                            data.push_back(cpos->z);
                         }
                     }
                 }
             }
-            this->dataSize = int(this->data.size());
-            glBufferData(GL_ARRAY_BUFFER, this->dataSize * sizeof(GLfloat), this->data.data(), GL_DYNAMIC_DRAW);
+            dataSize = int(data.size());
+            glBufferData(GL_ARRAY_BUFFER, dataSize * sizeof(GLfloat), data.data(), GL_DYNAMIC_DRAW);
         }
         //glUniformMatrix4fv(modelParameter, 1, GL_FALSE, glm::value_ptr(this->modelMatrix));
 
-        this->data.clear();
+        data.clear();
         // enable point size to have it accessible in shader
         //glEnable(GL_PROGRAM_POINT_SIZE);
         glPointSize(this->pointSize);
-        glDrawArrays(GL_LINES, 0, this->dataSize / 3); // TODO Really? can i divide 3 again? 
+        glDrawArrays(GL_LINES, 0, dataSize / 3); // TODO Really? can i divide 3 again? 
     }
 }
 
@@ -457,10 +482,10 @@ void Cube::initArrays() {
     glEnableVertexAttribArray(posLoc);
     glVertexAttribPointer(posLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
     
-    //this->dataSize = int(this->discretePoints.size());
+    //dataSize = int(this->discretePoints.size());
     // send to GPU
-    //glBufferData(GL_ARRAY_BUFFER, this->dataSize * sizeof(GLfloat), this->discretePoints.data(), GL_DYNAMIC_DRAW);
-    //this->data.clear();
+    //glBufferData(GL_ARRAY_BUFFER, dataSize * sizeof(GLfloat), this->discretePoints.data(), GL_DYNAMIC_DRAW);
+    //data.clear();
 
     // texture 
     glGenBuffers(1, &texVBO);
