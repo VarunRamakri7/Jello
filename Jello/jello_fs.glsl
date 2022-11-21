@@ -41,7 +41,7 @@ const float near = 0.1f;
 const float far = 100.0f;
 
 //const vec3 jello_absorb = vec3(0.8, 0.8, 0.1); // Amount of each color absorbed by the object
-const float reflectivity = 0.85f; // Reflectivity of object
+const float reflectivity = 0.5f; // Reflectivity of object
 const float n_air = 1.0029f;
 const float n_obj = 1.125f;
 
