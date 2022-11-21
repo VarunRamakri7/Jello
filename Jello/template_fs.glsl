@@ -4,7 +4,7 @@ out vec4 fragcolor; //the output color for this fragment
 
 void main(void)
 {   
-    fragcolor = vec4(1, 0, 0, 1);
+    fragcolor = vec4(0, 0, 0, 1);
 }
 
 

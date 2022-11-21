@@ -396,6 +396,11 @@ void DrawScene()
     glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
     glUniformMatrix4fv(UniformLocs::M, 1, false, glm::value_ptr(M));
 
+    // for debugging
+    /*glUniform1i(UniformLocs::pass, FRONT_FACES);
+    myCube->render(1, showDiscrete, drawType::DRAWTRI);
+    return;*/
+
     // Pass 0: Draw background
     glUniform1i(UniformLocs::pass, BACKGROUND);
 
@@ -411,6 +416,7 @@ void DrawScene()
 
     // Pass 1: Draw cube back faces and store eye-space depth
     glUniform1i(UniformLocs::pass, BACK_FACES);
+    // TRIANGLES SHOWING AS BACK FACES 
     myCube->render(1, showDiscrete, drawType::DRAWTRI);
 
     // Pass 2: Draw cube front faces
@@ -433,6 +439,8 @@ void DrawScene()
     glBindVertexArray(attribless_vao);
     glViewport(0, 0, screen_width, screen_height);
     draw_attribless_quad();
+
+    glEnable(GL_DEPTH_TEST);
 
     if (debugMode) {
         glUseProgram(debug_shader_program);
@@ -752,7 +760,7 @@ void initOpenGL()
 
 void buildScene() {
     // build scene
-    myCube = new Cube(3); // initial cube resolution = 2 
+    myCube = new Cube(4); // initial cube resolution = 2 
     myCube->setSpringMode(true, true, true);
     boundingBox = new BoundingBox(5, 5, 5, glm::vec3(-2, 2, 2.0f));
     myPlate = new Plate(initPlatePos, 2.0);

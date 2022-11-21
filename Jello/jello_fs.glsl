@@ -84,6 +84,8 @@ vec4 HackTransparency()
 
 void main(void)
 {
+    //fragcolor = vec4(inData.normal, 1.0f);
+    //return;
     switch(pass)
     {
         case 0: // Render Background
@@ -136,5 +138,4 @@ void main(void)
     }
 
 	//fragcolor = vec4(inData.normal, 1.0f); // Color as normals
-    //fragcolor = vec4(1.0, 0.0, 0.0, 1.0f);
 }

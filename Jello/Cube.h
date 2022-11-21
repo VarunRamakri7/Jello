@@ -50,15 +50,16 @@ class Cube {
         // mass points will be stored in discretePoints list but also per faces 
         // faces only store surface points 
         std::vector <MassPoint*> discretePoints{};
-        // faces
+        // faces to render triangles
         std::vector <MassPoint*> topFace{};
         std::vector <MassPoint*> bottomFace{};
         std::vector <MassPoint*> rightFace{};
         std::vector <MassPoint*> leftFace{};
         std::vector <MassPoint*> frontFace{};
         std::vector <MassPoint*> backFace{};
-        std::vector <std::vector <MassPoint*>*> faces{&topFace, &bottomFace , &rightFace, &leftFace, &frontFace , &backFace };
-       
+        std::vector <std::vector <MassPoint*>*> frontFaces{ &frontFace, &leftFace, &bottomFace }; 
+        std::vector <std::vector <MassPoint*>*> backFaces{ &rightFace, &backFace, &topFace }; // different winding order
+
         void resetAcceleration();
         void setExternalForce(glm::vec3 force);
 
@@ -66,10 +67,15 @@ class Cube {
         // render
         GLuint VBO, VAO, texVBO, normalVBO; // position, texture, normal
         glm::mat4 modelMatrix = glm::mat4(1.0f);
+        std::vector <GLfloat> data{}; // stores vertex positions {x1, y1, z1, x2, y2, z2}
+        std::vector <GLfloat> texData{}; // stores UV per vertex {u1, v1, u2, v2}
+        std::vector <GLfloat> normalData{}; // stores normal vector xyz per vertex {x1, y1, z1, x2, y2, z2}
+        int dataSize; // size of data{} to calculate how many triangles to draw
 
         void initArrays();
         void fillDiscretePoints(bool structural, bool shear, bool bend);
         void addConnection(MassPoint**** massPointMap, MassPoint* point, int i, int j, int k);
+        void addTriangle(glm::dvec3* pointA, glm::dvec3* pointB, glm::dvec3* pointC);
 
         float scale = 1.0f;
         glm::vec3 position = glm::vec3(0.0f);
