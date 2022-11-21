@@ -255,7 +255,6 @@ void Cube::addTriangle(glm::dvec3* posA, glm::dvec3* posB, glm::dvec3* posC) {
     this->data.push_back(posA->x);
     this->data.push_back(posA->y);
     this->data.push_back(posA->z);
-    //std::cout << posA.x << ", " << posA.y << ", " << posA.z << std::endl;
     // uv texture coord
     this->texData.push_back(0); // u
     this->texData.push_back(0); // v
@@ -269,7 +268,6 @@ void Cube::addTriangle(glm::dvec3* posA, glm::dvec3* posB, glm::dvec3* posC) {
     this->data.push_back(posB->x);
     this->data.push_back(posB->y);
     this->data.push_back(posB->z);
-    //std::cout << posB.x << ", " << posB.y << ", " << posB.z << std::endl;
     // uv texture coord
     this->texData.push_back(0); // u
     this->texData.push_back(0); // v
@@ -290,6 +288,12 @@ void Cube::addTriangle(glm::dvec3* posA, glm::dvec3* posB, glm::dvec3* posC) {
     this->normalData.push_back(normal.x); // x
     this->normalData.push_back(normal.y); // y
     this->normalData.push_back(normal.z); // z
+
+    /*std::cout << posA->x << ", " << posA->y << ", " << posA->z << std::endl;
+    std::cout << posB->x << ", " << posB->y << ", " << posB->z << std::endl;
+    std::cout << posC->x << ", " << posC->y << ", " << posC->z << std::endl;
+    std::cout << "Normal :" << normal.x << ", " << normal.y << ", " << normal.z << std::endl;
+    std::cout << "-------" << std::endl;*/
 }
 
 // drawType : 0 = points, 1 = triangles 
@@ -372,6 +376,7 @@ void Cube::render(GLuint modelParameter, bool showDiscrete, int drawType) {
                 }
             }
         }
+
         for (int i = 0; i < backFaces.size(); i++) {
             std::vector <MassPoint*>* face = backFaces[i];
             const int maxSize = face->size();

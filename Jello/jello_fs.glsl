@@ -76,17 +76,20 @@ vec4 HackTransparency()
     float fresnel = FresnelReflectAmount(n_air, n_obj, inData.normal, inData.light_dir);
     //fresnel -= 1.0f;
 
-    float spec = max(dot(inData.eye_dir, reflect_dir * fresnel), 0.0);
+    float spec = max(dot(inData.eye_dir, (reflect_dir * fresnel)), 0.0);
     spec *= spec;
-
     return (Material.base_color + Material.spec_color * spec * Material.spec_factor) * Light.bg_color;
 }
 
 void main(void)
 {
     // for debugging (viewing input elements)
-    //fragcolor = vec4(inData.normal, 1.0f);
-    //return;
+    //fragcolor = vec4(abs(inData.eye_dir), 1.0f);
+    //if(!gl_FrontFacing)
+    //        {
+    //            fragcolor = vec4(1.0,1.0,0, 1.0f);
+    //        }
+    // return;
 
     switch(pass)
     {

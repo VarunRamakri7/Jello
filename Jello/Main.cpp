@@ -403,9 +403,9 @@ void DrawScene()
     glUniformMatrix4fv(UniformLocs::M, 1, false, glm::value_ptr(M));
 
     // for debugging
-    //glUniform1i(UniformLocs::pass, FRONT_FACES);
-    //myCube->render(1, showDiscrete, drawType::DRAWTRI);
-    //return;
+    /*glUniform1i(UniformLocs::pass, FRONT_FACES);
+    myCube->render(1, showDiscrete, drawType::DRAWTRI);
+    return;*/
 
     // Pass 0: Draw background
     glUniform1i(UniformLocs::pass, BACKGROUND);
@@ -744,7 +744,7 @@ void initOpenGL()
 
 void buildScene() {
     // build scene
-    myCube = new Cube(4); // initial cube resolution = 2 
+    myCube = new Cube(2); // initial cube resolution = 2 
     myCube->setSpringMode(true, true, true);
     boundingBox = new BoundingBox(5, 5, 5, glm::vec3(-2, 2, 2.0f));
     myPlate = new Plate(initPlatePos, 2.0);
@@ -769,8 +769,8 @@ int main(int argc, char **argv){
     #endif
 
     // negotiate with the OpenGL
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4.6);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4.6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */
