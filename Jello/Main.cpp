@@ -395,7 +395,7 @@ void DrawScene()
     const glm::mat4 M = glm::rotate(angle, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::vec3(scale * myCube->scale));
     const glm::mat4 V = glm::lookAt(glm::vec3(CameraData.eye), glm::vec3(0.0f), glm::vec3(CameraData.up));
     const glm::mat4 P = glm::perspective(glm::pi<float>() / 4.0f, CameraData.resolution.z, cameraNear, cameraFar);
-    const glm::mat4 PV = P * V *trackball.Get3DViewCameraMatrix();
+    const glm::mat4 PV = P * V * trackball.Get3DViewCameraMatrix();
 
     // Get location for shader uniform variable
 
@@ -403,9 +403,9 @@ void DrawScene()
     glUniformMatrix4fv(UniformLocs::M, 1, false, glm::value_ptr(M));
 
     // for debugging
-    /*glUniform1i(UniformLocs::pass, FRONT_FACES);
-    myCube->render(1, showDiscrete, drawType::DRAWTRI);
-    return;*/
+    //glUniform1i(UniformLocs::pass, FRONT_FACES);
+    //myCube->render(1, showDiscrete, drawType::DRAWTRI);
+    //return;
 
     // Pass 0: Draw background
     glUniform1i(UniformLocs::pass, BACKGROUND);
@@ -456,11 +456,9 @@ void DrawScene()
         /*int PVM_loc = glGetUniformLocation(debug_shader_program, "PVM");
         glUniformMatrix4fv(PVM_loc, 1, false, glm::value_ptr(PVM));*/
 
-        // draw on top 
-        // NEED TO CONNECT THE RIGHT THINGS AGAIN 
+        // draw points on top 
         glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
         glUniformMatrix4fv(UniformLocs::M, 1, false, glm::value_ptr(M));
-
 
         myCube->render(1, showDiscrete, drawType::DRAWPOINT);
     }
@@ -664,6 +662,8 @@ void initOpenGL()
     std::cout << "Version: " << glGetString(GL_VERSION) << std::endl;
     std::cout << "GLSL Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     reload_shader();
 

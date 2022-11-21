@@ -84,8 +84,10 @@ vec4 HackTransparency()
 
 void main(void)
 {
+    // for debugging (viewing input elements)
     //fragcolor = vec4(inData.normal, 1.0f);
     //return;
+
     switch(pass)
     {
         case 0: // Render Background
