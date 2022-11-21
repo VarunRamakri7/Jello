@@ -152,6 +152,11 @@ float fStiffness = 50.f;
 float fDamping = 0.5f;
 float fMass = 1.0f;
 float fTimeStep = 0.005f;
+int cubeResolution = 2;
+bool cubeFixedFloor = true;
+bool cubeStructuralSpring = true;
+bool cubeShearSpring = true;
+bool cubeBendSpring = true;
 
 bool needReset = false;
 
@@ -219,11 +224,12 @@ void draw_gui(GLFWwindow* window)
    ImGui::SliderFloat("Mass", &fMass, 0.0f, 50.0f);
  
    ImGui::Text("Jello");
-   ImGui::SliderInt("Jello Resolution", &myCube->resolution, 1, 8);
-   ImGui::Checkbox("On Plate", &myCube->fixedFloor);
-   ImGui::Checkbox("Structural Spring", &myCube->structuralSpring);
-   ImGui::Checkbox("Shear Spring", &myCube->shearSpring);
-   ImGui::Checkbox("Bend Spring", &myCube->bendSpring);
+   // store and submit on reset 
+   ImGui::SliderInt("Jello Resolution", &cubeResolution, 1, 8);
+   ImGui::Checkbox("On Plate", &cubeFixedFloor);
+   ImGui::Checkbox("Structural Spring", &cubeStructuralSpring);
+   ImGui::Checkbox("Shear Spring", &cubeShearSpring);
+   ImGui::Checkbox("Bend Spring", &cubeBendSpring);
    ImGui::Checkbox("Add Gravity", &addGravity);
 
    needReset = ImGui::Button("Reset");
@@ -544,6 +550,11 @@ void idle()
        myCube->stiffness = (-1.0) * double(fStiffness); // negate
        myCube->damping = (-1.0) * double(fDamping); // negate
        myCube->mass = double(fMass);
+       myCube->resolution = cubeResolution;
+       myCube->structuralSpring = cubeStructuralSpring;
+       myCube->shearSpring = cubeShearSpring;
+       myCube->bendSpring = cubeBendSpring;
+       myCube->fixedFloor = cubeFixedFloor;
        myCube->reset();
        myPlate->setPosition(initPlatePos);
        // need to reconstrain since new masspoints are created
