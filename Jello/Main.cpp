@@ -22,8 +22,6 @@
 
 const char* const window_title = "Jello";
 
-int screen_width;
-int screen_height;
 static const std::string vertex_shader("template_vs.glsl");
 static const std::string fragment_shader("jello_fs.glsl");
 GLuint shader_program = -1;
@@ -61,6 +59,7 @@ struct CameraUniforms {
     glm::vec4 eye = glm::vec4(0.0f, 2.5f, 3.0f, 0.0f);
     glm::vec4 up = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
     glm::vec4 resolution = glm::vec4(800.0f, 800.0f, 1.0f, 0.0f); // Width, Height, Aspect Ratio
+    glm::ivec2 screen = glm::ivec2(0.0f, 0.0f);
 }CameraData;
 
 struct LightUniforms {
@@ -208,7 +207,7 @@ void DrawScene()
     glBindFramebuffer(GL_FRAMEBUFFER, FBO); // Render to FBO
     glDrawBuffers(2, buffers); // Draw to color attachment 0 and 1
     
-    glViewport(0, 0, screen_width, screen_height); // Change viewport size
+    glViewport(0, 0, CameraData.screen.x, CameraData.screen.y); // Change viewport size
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear FBO texture
     
     // Draw background quad
@@ -229,7 +228,7 @@ void DrawScene()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDrawBuffer(GL_BACK);
     
-    glViewport(0, 0, screen_width, screen_height);
+    glViewport(0, 0, CameraData.screen.x, CameraData.screen.y);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear FBO texture
 
     glBindTextureUnit(0, fbo_tex); // Bind color texture
@@ -356,8 +355,8 @@ void GetScreenSize()
 {
     // Get screen dimensions
     const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    screen_width = mode->width;
-    screen_height = mode->height;
+    CameraData.screen.x = mode->width;
+    CameraData.screen.y = mode->height;
 }
 
 void resize(GLFWwindow* window, int width, int height)
@@ -394,7 +393,7 @@ void initOpenGL()
     // For Color Attachment
     glGenTextures(1, &fbo_tex);
     glBindTexture(GL_TEXTURE_2D, fbo_tex); // Bind color texture
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, screen_width, screen_height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0); // Use screen size
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, CameraData.screen.x, CameraData.screen.y, 0, GL_RGB, GL_UNSIGNED_BYTE, 0); // Use screen size
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -403,7 +402,7 @@ void initOpenGL()
     // Create depth texture
     glGenTextures(1, &depth_tex);
     glBindTexture(GL_TEXTURE_2D, depth_tex); // Bind depth texture
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, screen_width, screen_height, 0, GL_RED, GL_FLOAT, 0); // Use screen size
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, CameraData.screen.x, CameraData.screen.y, 0, GL_RED, GL_FLOAT, 0); // Use screen size
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

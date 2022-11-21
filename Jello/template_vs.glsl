@@ -17,6 +17,7 @@ layout(std140, binding = 4) uniform CameraUniforms {
     vec4 eye;
     vec4 up;
     vec4 resolution;
+	ivec2 screen;
 } Camera;
 
 in vec3 pos_attrib; // This variable holds the position of vertices

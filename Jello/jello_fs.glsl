@@ -22,6 +22,7 @@ layout(std140, binding = 4) uniform CameraUniforms {
     vec4 eye;
     vec4 up;
     vec4 resolution;
+	ivec2 screen;
 } Camera;
 
 in VertexData
@@ -110,7 +111,7 @@ void main(void)
                 // Compute front face depth
 
                 // Compute thickness
-                vec3 thickness = abs(normalize(inData.depth) - texture(depth_tex, uv)).xyz; // Compute thickness from front face depth and back face depth
+                vec3 thickness = abs(normalize(inData.depth) - texture(depth_tex, inData.tex_coord)).xyz; // Compute thickness from front face depth and back face depth
 
                 // Get refracted background color
                 //vec4 ref_bg_color = Light.bg_color * inverse(transpose(M));
@@ -120,6 +121,7 @@ void main(void)
                 vec3 absorb = exp(-Material.absorption.xyz * thickness);
 
                 fragcolor = vec4(color * absorb, 1.0);
+                //fragcolor = vec4(inData.tex_coord, 0.0f, 1.0f);
                 //fragcolor = ref_bg_color;
             }
             else
