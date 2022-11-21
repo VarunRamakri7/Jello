@@ -88,6 +88,7 @@ void main(void)
     {
         case 0: // Render Background
             fragcolor = Light.bg_color;
+            depthVal = inData.depth; // Store eye-space depth
             break;
         case 1: // Render mesh back faces and store eye-space depth
             if(!gl_FrontFacing)

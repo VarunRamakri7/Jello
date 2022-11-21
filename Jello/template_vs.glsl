@@ -51,7 +51,7 @@ void main(void)
 
 		outData.normal = normalize(M * vec4(normal_attrib, 0.0)).xyz;
 
-		outData.depth =  (pass == 0) ? vec4(1.0f) : Camera.eye - (PV * vec4(pos_attrib, 1.0)); // Send eye-space depth
+		outData.depth =  (pass == 0) ? vec4(0.0f) : Camera.eye - (PV * vec4(pos_attrib, 1.0)); // Send eye-space depth
 
 		gl_Position = (pass == 0) ? vec4(outData.position, 1.0) : PV * vec4(outData.position, 1.0);
 	}
