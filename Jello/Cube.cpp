@@ -482,9 +482,10 @@ void Cube::render(GLuint modelParameter, bool showDiscrete, int drawType) {
 
         dataSize = int(data.size());
         glBufferData(GL_ARRAY_BUFFER, dataSize * sizeof(GLfloat), this->data.data(), GL_DYNAMIC_DRAW);
-        this->data.clear();
         glPointSize(this->pointSize);
         glDrawArrays(GL_LINES, 0, dataSize / 3); 
+
+        this->data.clear();
     }
 }
 
@@ -531,6 +532,12 @@ void Cube::initArrays() {
 
 void Cube::setSpringMode(bool structural, bool shear, bool bend) {
     this->discretePoints.clear();
+    for (const auto& f : frontFaces) {
+        f->clear();
+    }
+    for (const auto& f : backFaces) {
+        f->clear();
+    }
     this->fillDiscretePoints(structural, shear, bend);
     this->structuralSpring = structural;
     this->shearSpring = shear;

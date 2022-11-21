@@ -391,7 +391,7 @@ void DrawScene()
     const glm::mat4 P = glm::perspective(glm::pi<float>() / 4.0f, CameraData.resolution.z, cameraNear, cameraFar);
     const glm::mat4 PV = P * V *trackball.Get3DViewCameraMatrix();
 
-     // Get location for shader uniform variable
+    // Get location for shader uniform variable
 
     glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
     glUniformMatrix4fv(UniformLocs::M, 1, false, glm::value_ptr(M));
@@ -416,7 +416,6 @@ void DrawScene()
 
     // Pass 1: Draw cube back faces and store eye-space depth
     glUniform1i(UniformLocs::pass, BACK_FACES);
-    // TRIANGLES SHOWING AS BACK FACES 
     myCube->render(1, showDiscrete, drawType::DRAWTRI);
 
     // Pass 2: Draw cube front faces
@@ -467,11 +466,6 @@ void display(GLFWwindow* window)
 {
    //Clear the screen to the color previously specified in the glClearColor(...) call.
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-   // model matrix
-   //glm::mat4 M = myCube->getModelMatrix();
-   // perspective and view matrix
-  // glm::mat4 PV = myCamera->getPV() * trackball.Get3DViewCameraMatrix();
    
    glUseProgram(shader_program);
 
@@ -484,16 +478,6 @@ void display(GLFWwindow* window)
    //    // show plate
    //    myPlate->render(1);
    //}
-   
-
-   //Get location for shader uniform variable
-   //glm::mat4 PVM = PV *M;
-   //int PVM_loc = glGetUniformLocation(shader_program, "PVM");
-   //glUniformMatrix4fv(PVM_loc, 1, false, glm::value_ptr(PVM));
-
-   draw_gui(window);
-
-    
 
     glBindBuffer(GL_UNIFORM_BUFFER, material_ubo); //Bind the OpenGL UBO before we update the data.
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(MaterialUniforms), &MaterialData); //Upload the new uniform values.
@@ -554,15 +538,12 @@ void idle()
 
    if (needReset) {
        // reset simulation
+       std::cout << "RESETTING" << std::endl;
 
        // send cube values
        myCube->stiffness = (-1.0) * double(fStiffness); // negate
        myCube->damping = (-1.0) * double(fDamping); // negate
        myCube->mass = double(fMass);
-       //myCube->timeStep = double(fTimeStep);
-       //timeStep = double(fTimeStep);
-       // which means timestep changes in real time
-
        myCube->reset();
        myPlate->setPosition(initPlatePos);
        // need to reconstrain since new masspoints are created
@@ -573,14 +554,6 @@ void idle()
       
    }
 
-   //Pass time_sec value to the shaders
-   //int time_loc = glGetUniformLocation(shader_program, "time");
-   //glUniform1f(time_loc, time_sec);
-
-    //float time_sec = static_cast<float>(glfwGetTime());
-
-    //Pass time_sec value to the shaders
-    //int time_loc = glGetUniformLocation(shader_program, "time");
     glUniform1f(UniformLocs::time, time_sec);
 
 }
