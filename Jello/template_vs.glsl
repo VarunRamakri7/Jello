@@ -2,8 +2,9 @@
 
 layout(location = 0) uniform mat4 M;
 layout(location = 1) uniform mat4 PV;
-layout(location = 2) uniform float time;
-layout(location = 3) uniform int pass;
+layout(location = 2) uniform mat4 V;
+layout(location = 3) uniform float time;
+layout(location = 4) uniform int pass;
 
 uniform sampler2D fboTex;
 
@@ -39,6 +40,8 @@ const vec4 quad[4] = vec4[] (vec4(-1.0, 1.0, 0.0, 1.0),
 
 void main(void)
 {
+	mat4 modelView = V * M;
+
 	// For all passes except QUAD
 	if (pass != 4)
 	{
@@ -46,7 +49,7 @@ void main(void)
 		outData.position = (pass == 0) ? pos_attrib : vec3(M * vec4(pos_attrib, 1.0)); // World-space vertex position
 		outData.tex_coord = tex_coord_attrib; // Send tex_coord to fragment shader
 	
-		outData.eye_dir = -1.0 * normalize(outData.position);
+		outData.eye_dir = -1.0 * normalize(vec3(modelView * vec4(outData.position, 1.0)));
 		outData.light_dir = normalize(Light.light_w).xyz;
 
 		outData.normal = normalize(M * vec4(normal_attrib, 0.0)).xyz;

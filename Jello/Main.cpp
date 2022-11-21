@@ -79,8 +79,9 @@ namespace UniformLocs
 {
     int M = 0;
     int PV = 1;
-    int time = 2;
-    int pass = 3;
+    int V = 2;
+    int time = 3;
+    int pass = 4;
 }
 
 GLuint light_ubo = -1;
@@ -256,6 +257,7 @@ void display(GLFWwindow* window)
     glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
         
     glUniformMatrix4fv(UniformLocs::M, 1, false, glm::value_ptr(M));
+    glUniformMatrix4fv(UniformLocs::V, 1, false, glm::value_ptr(V));
 
     glBindBuffer(GL_UNIFORM_BUFFER, material_ubo); //Bind the OpenGL UBO before we update the data.
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(MaterialUniforms), &MaterialData); //Upload the new uniform values.

@@ -4,8 +4,8 @@ layout(binding = 0) uniform sampler2D fbo_tex;
 layout(binding = 1) uniform sampler2D depth_tex;
 
 layout(location = 0) uniform mat4 M;
-layout(location = 2) uniform float time;
-layout(location = 3) uniform int pass;
+layout(location = 3) uniform float time;
+layout(location = 4) uniform int pass;
 
 layout(std140, binding = 2) uniform LightUniforms {
     vec4 light_w; // world-space light position
@@ -41,7 +41,7 @@ const float near = 0.1f;
 const float far = 100.0f;
 
 //const vec3 jello_absorb = vec3(0.8, 0.8, 0.1); // Amount of each color absorbed by the object
-const float reflectivity = 0.5f; // Reflectivity of object
+const float reflectivity = 0.75f; // Reflectivity of object
 const float n_air = 1.0029f;
 const float n_obj = 1.125f;
 
@@ -76,7 +76,7 @@ vec4 HackTransparency()
     float fresnel = FresnelReflectAmount(n_air, n_obj, inData.normal, inData.light_dir);
     //fresnel -= 1.0f;
 
-    float spec = max(dot(inData.eye_dir, reflect_dir * fresnel), 0.0);
+    float spec = max(dot(inData.eye_dir, reflect_dir), 0.0) * fresnel;
     spec *= spec;
 
     return (Material.base_color + Material.spec_color * spec * Material.absorption.z) * Light.bg_color;
