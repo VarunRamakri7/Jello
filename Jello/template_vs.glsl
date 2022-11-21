@@ -48,7 +48,7 @@ void main(void)
 		outData.light_dir = normalize(Light.light_w).xyz; // directional light
 		outData.normal = normalize(M * vec4(normal_attrib, 0.0)).xyz;
 		outData.depth =  (pass == 0) ? vec4(1.0f) : Camera.eye - (PV * vec4(pos_attrib, 1.0)); // Send eye-space depth
-        outData.eye_dir = -1.0 * normalize(outData.depth);
+        outData.eye_dir = -1.0 * normalize(vec3(outData.depth));
 
 		gl_Position = (pass == 0) ? vec4(outData.position, 1.0) : PV * vec4(outData.position, 1.0);
 	}
