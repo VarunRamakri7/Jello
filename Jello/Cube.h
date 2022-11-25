@@ -68,14 +68,12 @@ class Cube {
         std::vector <GLfloat> data{}; // stores vertex positions {x1, y1, z1, x2, y2, z2}
         std::vector <GLfloat> texData{}; // stores UV per vertex {u1, v1, u2, v2}
         std::vector <GLfloat> normalData{}; // stores normal vector xyz per vertex {x1, y1, z1, x2, y2, z2}
-        int dataSize; // size of data{} to calculate how many triangles to draw
 
         void initArrays();
         void fillDiscretePoints(bool structural, bool shear, bool bend);
         void addConnection(MassPoint**** massPointMap, MassPoint* point, int i, int j, int k);
         void addTriangle(glm::dvec3* pointA, glm::dvec3* pointB, glm::dvec3* pointC);
 
-        float scale = 1.0f;
         glm::vec3 position = glm::vec3(0.0f);
         // unit cube (m)
         const std::vector <glm::vec3> initPoints{

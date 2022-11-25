@@ -216,10 +216,13 @@ void draw_gui(GLFWwindow* window)
    // display
    ImGui::Text("Display");
    ImGui::Checkbox("Debug Mode", &debugMode);
-   ImGui::Checkbox("Show discrete", &showDiscrete);
-   ImGui::Checkbox("Show bounding box", &showBB);
-   ImGui::SliderInt("Particle Size", &myCube->pointSize, 1, 10);
-   ImGui::Checkbox("Visualize Springs", &showSpring);
+   if (debugMode) {
+       // show other debug options
+       ImGui::Checkbox("Show discrete", &showDiscrete);
+       ImGui::Checkbox("Show bounding box", &showBB);
+       ImGui::SliderInt("Particle Size", &myCube->pointSize, 1, 10);
+       ImGui::Checkbox("Visualize Springs", &showSpring);
+   }
 
    // physics
    ImGui::Text("Physics");
@@ -527,15 +530,9 @@ void DrawScene()
         // make render debug with options for points and spring as another option 
 
         // draw bounding box
-        //if (showBB) {
-        boundingBox->render(UniformLocs::M);
-        //}
-
-        //// draw plate
-        //if (mycube->fixedfloor) {
-        //    // show plate
-        //    myplate->render(1);
-        //}
+        if (showBB) {
+            boundingBox->render(UniformLocs::M);
+        }
     }
 
 }

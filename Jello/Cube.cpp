@@ -5,7 +5,8 @@
 
 Cube::Cube(int resolution, GLint shader, GLint debug) {
     this->resolution = resolution;
-    this->modelMatrix = glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(this->scale)), this->position);
+    this->modelMatrix = glm::translate(glm::mat4(1.0f), this->position);
+    // initial position only because mass points moves in cpu 
 
     this->shaderProgram = shader;
     this->debugShaderProgram = debug;
@@ -14,7 +15,7 @@ Cube::Cube(int resolution, GLint shader, GLint debug) {
 }
 
 Cube::Cube() {
-    this->modelMatrix = glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(this->scale)), this->position);
+    this->modelMatrix = glm::translate(glm::mat4(1.0f), this->position);
 
     initArrays();
 }
@@ -333,7 +334,7 @@ void Cube::render(GLuint modelParameter, bool showDiscrete, bool showSpring, boo
         glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(GLfloat), data.data(), GL_DYNAMIC_DRAW);
         // draw points
         glPointSize(this->pointSize);
-        glDrawArrays(GL_POINTS, 0, dataSize/3); 
+        glDrawArrays(GL_POINTS, 0, this->data.size() / 3);
 
         this->data.clear();
 
@@ -382,10 +383,9 @@ void Cube::render(GLuint modelParameter, bool showDiscrete, bool showSpring, boo
                 }
             }
 
-            dataSize = int(data.size());
-            glBufferData(GL_ARRAY_BUFFER, dataSize * sizeof(GLfloat), this->data.data(), GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, this->data.size() * sizeof(GLfloat), this->data.data(), GL_DYNAMIC_DRAW);
             glPointSize(this->pointSize);
-            glDrawArrays(GL_LINES, 0, dataSize / 3);
+            glDrawArrays(GL_LINES, 0, this->data.size() / 3);
 
             this->data.clear();
         }
@@ -475,9 +475,8 @@ void Cube::render(GLuint modelParameter, bool showDiscrete, bool showSpring, boo
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glEnableVertexAttribArray(posLoc);
-        dataSize = this->data.size();
         // send data to GPU 
-        glBufferData(GL_ARRAY_BUFFER, dataSize * sizeof(GLfloat), this->data.data(), GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, this->data.size() * sizeof(GLfloat), this->data.data(), GL_DYNAMIC_DRAW);
 
         glBindBuffer(GL_ARRAY_BUFFER, texVBO);
         glEnableVertexAttribArray(texCoordLoc);
@@ -487,7 +486,7 @@ void Cube::render(GLuint modelParameter, bool showDiscrete, bool showSpring, boo
         glEnableVertexAttribArray(normalLoc);
         glBufferData(GL_ARRAY_BUFFER, this->normalData.size() * sizeof(GLfloat), this->normalData.data(), GL_DYNAMIC_DRAW);
 
-        glDrawArrays(GL_TRIANGLES, 0, dataSize / 3); // drawing dataSize / 3 triangles (3 points form a triangle)
+        glDrawArrays(GL_TRIANGLES, 0, this->data.size() / 3); // drawing dataSize / 3 triangles (3 points form a triangle)
 
         this->data.clear();
         this->texData.clear();
