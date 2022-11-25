@@ -6,8 +6,8 @@
 Cube::Cube(int resolution, glm::vec3 position, GLint shader, GLint debug) {
     this->resolution = resolution;
     this->position = position;
+    // saving only initial position because mass points moves in cpu (doesnt affect model Mat)
     this->modelMatrix = glm::translate(glm::mat4(1.0f), this->position);
-    // initial position only because mass points moves in cpu 
 
     this->shaderProgram = shader;
     this->debugShaderProgram = debug;
@@ -17,7 +17,6 @@ Cube::Cube(int resolution, glm::vec3 position, GLint shader, GLint debug) {
 
 Cube::Cube() {
     this->modelMatrix = glm::translate(glm::mat4(1.0f), this->position);
-
     initArrays();
 }
 
@@ -26,7 +25,7 @@ void Cube::reset() {
 }
 
 void Cube::addConnection(MassPoint **** massPointMap, MassPoint* point, int i, int j, int k) {
-    // for surface nodes, some of these neighbors might not exists
+    // for surface nodes, some neighbors might not exists
     if (i < resolution && j < resolution && k < resolution && i >= 0 && j >= 0 && k >= 0) {
         point->addConnection(massPointMap[i][j][k]);
     }
@@ -35,17 +34,6 @@ void Cube::addConnection(MassPoint **** massPointMap, MassPoint* point, int i, i
 void Cube::fillDiscretePoints(bool structural, bool shear, bool bend) {
 
     const int maxRes = this->resolution > 1 ? this->resolution - 1 : 1;
-    // center is not center
-    if (this->resolution == 1) {
-        /*discretePoints = {
-            glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 0.0f),
-            glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f)
-        };
-        surfacePoints = {
-            glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 0.0f),
-            glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f)
-        };*/
-    }
 
     // create a storage space to store the points
     MassPoint**** massPointMap = new MassPoint * **[this->resolution];
@@ -131,50 +119,6 @@ void Cube::fillDiscretePoints(bool structural, bool shear, bool bend) {
         }
     }
 
-    // to print out points in each face
-    /*std::cout << "front: " << frontFace.size() << std::endl;
-    for (int i = 0; i < frontFace.size(); i++) {
-        MassPoint* point = frontFace[i];
-        const glm::dvec3* pos = point->getPosition();
-        std::cout << pos->x << ", " << pos->y << ", " << pos->z << std::endl;
-    }
-    std::cout << "--------" << std::endl;
-    std::cout << "back: " << backFace.size() << std::endl;
-    for (int i = 0; i < backFace.size(); i++) {
-        MassPoint* point = backFace[i];
-        const glm::dvec3* pos = point->getPosition();
-        std::cout << pos->x << ", " << pos->y << ", " << pos->z << std::endl;
-    }
-    std::cout << "--------" << std::endl;
-    std::cout << "right: " <<rightFace.size() << std::endl;
-    for (int i = 0; i < rightFace.size(); i++) {
-        MassPoint* point = rightFace[i];
-        const glm::dvec3* pos = point->getPosition();
-        std::cout << pos->x << ", " << pos->y << ", " << pos->z << std::endl;
-    }
-    std::cout << "--------" << std::endl;
-    std::cout << "left: " << leftFace.size() << std::endl;
-    for (int i = 0; i < leftFace.size(); i++) {
-        MassPoint* point = leftFace[i];
-        const glm::dvec3* pos = point->getPosition();
-        std::cout << pos->x << ", " << pos->y << ", " << pos->z << std::endl;
-    }
-    std::cout << "--------" << std::endl;
-    std::cout << "top: " << topFace.size() << std::endl;
-    for (int i = 0; i < topFace.size(); i++) {
-        MassPoint* point = topFace[i];
-        const glm::dvec3* pos = point->getPosition();
-        std::cout << pos->x << ", " << pos->y << ", " << pos->z << std::endl;
-    }
-    std::cout << "--------" << std::endl;
-    std::cout << "bottom: " << bottomFace.size() << std::endl;
-    for (int i = 0; i < bottomFace.size(); i++) {
-        MassPoint* point = bottomFace[i];
-        const glm::dvec3* pos = point->getPosition();
-        std::cout << pos->x << ", " << pos->y << ", " << pos->z << std::endl;
-    }
-    std::cout << "--------" << std::endl;*/
-
     // add spring connections
     for (int i = 0; i < this->resolution; i++) {
         for (int j = 0; j < this->resolution; j++) {
@@ -238,11 +182,11 @@ void Cube::setExternalForce(glm::dvec3 force) {
         MassPoint* currentPoint = discretePoints[i];
 
         if (currentPoint->isFixed() == true) {
-            // TODO: do we need this check? 
+            // skip if point cannot move
             continue;
         }
 
-        currentPoint->setExternalForce(force); // at position? -> should get point of collision
+        currentPoint->setExternalForce(force); 
     }
 }
 
@@ -290,15 +234,8 @@ void Cube::addTriangle(glm::dvec3* posA, glm::dvec3* posB, glm::dvec3* posC) {
     this->normalData.push_back(normal.x); // x
     this->normalData.push_back(normal.y); // y
     this->normalData.push_back(normal.z); // z
-
-    /*std::cout << posA->x << ", " << posA->y << ", " << posA->z << std::endl;
-    std::cout << posB->x << ", " << posB->y << ", " << posB->z << std::endl;
-    std::cout << posC->x << ", " << posC->y << ", " << posC->z << std::endl;
-    std::cout << "Normal :" << normal.x << ", " << normal.y << ", " << normal.z << std::endl;
-    std::cout << "-------" << std::endl;*/
 }
 
-// drawType : 0 = points, 1 = triangles 
 void Cube::render(GLuint modelParameter, bool showDiscrete, bool showSpring, bool debugMode) {
 
     glUniformMatrix4fv(modelParameter, 1, false, glm::value_ptr(this->modelMatrix));
@@ -517,10 +454,7 @@ void Cube::initArrays() {
     glEnableVertexAttribArray(posLoc);
     glVertexAttribPointer(posLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-    //dataSize = int(this->discretePoints.size());
-    // send to GPU
-    //glBufferData(GL_ARRAY_BUFFER, dataSize * sizeof(GLfloat), this->discretePoints.data(), GL_DYNAMIC_DRAW);
-    //data.clear();
+    // send data on render() since points move
 
     // texture 
     glGenBuffers(1, &texVBO);

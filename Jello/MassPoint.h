@@ -9,12 +9,15 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
 
+// mass points make up the jello cube
+// each mass point is connected by a spring
 class MassPoint {
+
     public:
+        MassPoint() {}; // default constructor 
         MassPoint(glm::dvec3 position, bool isSurfacePoint);
         MassPoint(glm::dvec3 position, glm::dvec3 velocity);
 
-        MassPoint(){}; // default constructor 
         ~MassPoint(){};
 
         // Set
@@ -41,8 +44,6 @@ class MassPoint {
 
         // Process
         void addConnection(MassPoint* n);
-        void clearAllConnections();
-
 
     private:
         std::vector <MassPoint*> connectedPoints;

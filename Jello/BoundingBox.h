@@ -15,9 +15,8 @@
 class BoundingBox {
     public:
         BoundingBox(int width, int height, int depth, glm::vec3 topFrontLeft, GLuint debugShader);
-        void render(GLuint modelParameter); // TODO add view mode 
+        void render(GLuint modelParameter);
 
-        // TODO make all use glfloat
         double minX;
         double minY;
         double minZ;
@@ -25,7 +24,7 @@ class BoundingBox {
         double maxY;
         double maxZ;
 
-        std::vector <Plane*> planes{}; // 6 
+        std::vector <Plane*> planes{}; // 6 sides / planes
 };
 
 #endif

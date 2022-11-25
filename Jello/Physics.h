@@ -20,8 +20,8 @@
 extern BoundingBox* boundingBox;
 
 struct collisionPoint {
-    MassPoint* mp; // need to keep const cos it already collided ? dont want it to be moving
-    glm::dvec3 closestPoint;  // make const?
+    MassPoint* mp;
+    glm::dvec3 closestPoint;
 };
 
 // jelly simulation
@@ -45,6 +45,5 @@ bool checkCollision(MassPoint* massPoint, BoundingBox* const bbox, std::vector<c
 bool checkCollision(MassPoint* massPoint, Plane* const plane, std::vector<collisionPoint>& collisionPoints);
 void processCollisionResponse(Cube* const cube, std::vector<collisionPoint>& collisionPoints);
 bool isPointInBox(glm::dvec3* const point, BoundingBox* const bbox);
-
 
 #endif

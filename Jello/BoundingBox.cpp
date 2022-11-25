@@ -21,8 +21,7 @@ BoundingBox::BoundingBox(int width, int height, int depth, glm::vec3 topFrontLef
     glm::vec3 p8 = p4; //bottomBackRight
     p8.z = p8.z - depth;
 
-    // normals need to face inwards (because we are inside the box
-    // TODO calculate the normal from camera position // inside outside the box // or objects normal cos we want to collide from both sides
+    // normals need to face inwards (because we are inside the box)
     // front plane 
     Plane* front = new Plane(p2, p1, p4, p3, debugShader);//Plane(p1, p2, p3, p4);
     // right plane

@@ -13,12 +13,9 @@
 
 #include "MassPoint.h"
 
-enum drawType {
-    DRAWPOINT, DRAWTRI
-};
 
 class Cube {
-    // jello 
+    // jello cube
 
     public:
 
@@ -38,8 +35,9 @@ class Cube {
         float damping = 0.5f; // store as positive and negate in function so it makes more sense in ImGui
         float mass = 1.0f;
 
+        // adjustable values
         int resolution = 1;
-
+        // turn on/off springs
         bool structuralSpring;
         bool shearSpring;
         bool bendSpring;
@@ -63,6 +61,8 @@ class Cube {
 
     private:
         // render
+        GLint shaderProgram;
+        GLint debugShaderProgram;
         GLuint VBO, VAO, texVBO, normalVBO; // position, texture, normal
         glm::mat4 modelMatrix = glm::mat4(1.0f);
         std::vector <GLfloat> data{}; // stores vertex positions {x1, y1, z1, x2, y2, z2}
@@ -88,9 +88,6 @@ class Cube {
 
         // attribute locations for debug shaders
         const int debugPosLoc = 0;
-
-        GLint shaderProgram;
-        GLint debugShaderProgram;
 };
 
 

@@ -23,10 +23,8 @@ void Plate::setPosition(glm::vec3 position, double timeStep) {
 
     // move constraint points
     for (const auto& p : this->constraintPoints) {
-        // this keeps on adding ...  TODO cap this 
         p->setPosition(*p->getPosition() + posOffset);
         // change in position over change in time
-        // should time be a global variable 
         glm::vec3 vel = posOffset / timeStep;
 
         p->setVelocity(vel);
@@ -34,7 +32,6 @@ void Plate::setPosition(glm::vec3 position, double timeStep) {
 
     platePlane->setPosition(position);
 }
-
 
 void Plate::setConstraintPoints(std::vector <MassPoint*> points) {
     this->constraintPoints = points;

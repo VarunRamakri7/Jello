@@ -45,13 +45,8 @@ void MassPoint::addConnection(MassPoint* m) {
     this->connectedPoints.push_back(m);
 }
 
-void MassPoint::clearAllConnections() {
-    // TODO is ever used? 
-    this->connectedPoints.clear();
-}
 
 // get
-
 bool MassPoint::isSurfacePoint() {
     return this->surfacePoint;
 }
@@ -71,11 +66,11 @@ glm::dvec3* MassPoint::getPosition() {
 glm::dvec3* MassPoint::getVelocity() {
     return &this->velocity;
 }
+
 glm::dvec3* MassPoint::getAcceleration() {
     return &this->acceleration;
 }
 
-// to do make pointer to constant value 
 glm::dvec3* MassPoint::getInitialPosition()
 {
     return &this->initialPos;

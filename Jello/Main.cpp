@@ -18,7 +18,6 @@
 #include <algorithm>
 
 #include "InitShader.h"    //Functions for loading shaders from text files
-#include "LoadTexture.h"   //Functions for creating OpenGL textures from image files
 #include "VideoMux.h"      //Functions for saving videos
 #include "trackball.h"
 #include "BoundingBox.h"
@@ -36,7 +35,7 @@ static const std::string fragment_shader("jello_fs.glsl");
 static const std::string debug_vertex_shader("debug_vs.glsl");
 static const std::string debug_fragment_shader("debug_fs.glsl");
 
-// scene
+// SCENE
 Cube* myCube;
 Plate* myPlate;
 BoundingBox* boundingBox;
@@ -44,10 +43,9 @@ glm::vec3 initPlatePos = glm::vec3(0.0f, 0.0f, 0.5f);
 glm::vec3 initCubePos = glm::vec3(-0.5f, 0.0f, 0.5f);
 glm::vec4 initCamPos = glm::vec4(0.0f, 2.5f, 5.0f, 1.0f); 
 
+// RENDER
 GLuint shader_program = -1; // to draw jello
 GLuint debug_shader_program = -1; // to visualize masspoints and bounding box
-float time_sec;
-
 GLuint FBO; // Frame buffer object
 GLuint fbo_tex = -1; // Color FBO texture
 GLuint depth_tex = -1; // Depth FBO texture
@@ -124,33 +122,40 @@ enum PASS
     QUAD // Textured quad
 };
 
-bool recording = false;
+// INTERACTIVE
+float time_sec;
 
-// interactive
 TrackBallC trackball;
 bool mouseLeft, mouseMid, mouseRight;
 double mouseX, mouseY; // current mouse positions
 glm::vec2 mouseClickedPos; // stored mouse position on click
 float mouseClickTime = 0.0f; // track time elapsed since clicked
+
 glm::vec3 externalForce = glm::vec3(0.0); // total drag acceleration 
+
 bool moveCam = false; // if user holds "c" on the keyboard, will make this true -> moves camera
 bool movePlate = false; // if user holds "p" on the keyboard, will make this true -> moves plate
+
 // if user drags mouse will apply acceleration force on jello
 float forceDamping = 0.3f; 
 
-// display
+// DISPLAY MODES
 bool showDiscrete = false;
 bool showSpring = false;
 bool showBB = true; // show bounding box
 bool debugMode = false;
 
-// physics
+bool recording = false;
+
+// PHYSICS
 glm::vec3 gravity = glm::vec3(0.0, -9.8, 0.0); // acceleration 
 bool addGravity = false;
+
 enum integratorEnum {
     EULER, RK4
 }; // euler = 0 , RK4 = 1
 int integrator = integratorEnum::EULER;
+
 // float values for it to be adjustable with ImGui
 float fTimeStep = 0.005f;
 int cubeResolution = 2;
@@ -163,7 +168,7 @@ bool needReset = false;
 bool needCamReset = false;
 
 
-
+// helper functions
 void clamp(double min, double max, double& value) {
     value = std::min(value, max);
     value = std::max(value, min);
@@ -234,7 +239,7 @@ void draw_gui(GLFWwindow* window)
  
    // Jello
    ImGui::Text("Jello");
-   ImGui::SliderInt("Jello Resolution", &cubeResolution, 1, 8);
+   ImGui::SliderInt("Jello Resolution", &cubeResolution, 2, 8);
    ImGui::Checkbox("On Plate", &cubeFixedFloor);
    ImGui::Checkbox("Structural Spring", &cubeStructuralSpring);
    ImGui::Checkbox("Shear Spring", &cubeShearSpring);
@@ -295,15 +300,14 @@ void getWorld(glm::vec2 mouse, glm::vec4& world) {
     // camera always looking at the center 
     glm::mat4 V = glm::lookAt(glm::vec3(CameraData.eye), glm::vec3(0.0f), glm::vec3(CameraData.up));
     glm::mat4 P = glm::perspective(glm::pi<float>() / 4.0f, float(CameraData.resolution.x)/ float(CameraData.resolution.y), cameraNear, cameraFar);
-    glm::mat4 PV = P * V;// *trackball.Get3DViewCameraMatrix();
-    // TODO get plate model's mat? but now its identity cos we change hte pixels 
+    glm::mat4 PV = P * V;
     glm::mat4 invPV = glm::inverse(PV);
 
     world = invPV * clip;
 }
 
-//set the callbacks for the virtual trackball
-//this is executed when the mouse is moving
+// set the callbacks for the virtual trackball
+// this is executed when the mouse is moving
 void MouseCallback(GLFWwindow* window, double x, double y) {
     //do not forget to pass the events to ImGUI!
     ImGuiIO& io = ImGui::GetIO();
@@ -319,15 +323,15 @@ void MouseCallback(GLFWwindow* window, double x, double y) {
     if (mouseRight) trackball.Zoom(mouseX, mouseY);
 }
 
-//set the variables when the button is pressed or released
+// set the variables when the button is pressed or released
 void MouseButtonCallback(GLFWwindow* window, int button, int state, int mods) {
     //do not forget to pass the events to ImGUI!
 
     ImGuiIO& io = ImGui::GetIO();
     io.AddMouseButtonEvent(button, state);
-    if (io.WantCaptureMouse) return; //make sure you do not call this callback when over a menu
+    if (io.WantCaptureMouse) return; // make sure you do not call this callback when over a menu
 
-    //process them
+    // process them
     if (button == GLFW_MOUSE_BUTTON_LEFT && state == GLFW_PRESS)
     {
         if (moveCam) {
@@ -353,12 +357,8 @@ void MouseButtonCallback(GLFWwindow* window, int button, int state, int mods) {
         // vector from clicked to current in world space
         clamp(0.0, double(CameraData.resolution.y), mouseY);
         clamp(0.0, double(CameraData.resolution.x), mouseX);
-        //glm::vec4 clickedW;
-        //glm::vec4 currentW;
-        //getWorld(glm::vec2(mouseX, mouseY), currentW);
-        //getWorld(mouseClickedPos, clickedW);
+        
         glm::vec2 posOffset = glm::vec2(mouseX, mouseY) - mouseClickedPos;
-        std::cout << "mouse: " << mouseX << ", " << mouseY << std::endl;
 
         if (movePlate == false){
             // accumulate external acceleration force
@@ -372,24 +372,19 @@ void MouseButtonCallback(GLFWwindow* window, int button, int state, int mods) {
                 glm::vec2 dragV = posOffset / (timeDiff * timeDiff);
                 posOffset *= 0.1; // damp
                 clamp(-50.0f, 50.0f, posOffset.x); // clamp force so it wont flip the jelly 
-                clamp(-50.0f, 50.0f, posOffset.y); // TODO ALLOW MORE IF OFF PLATE?
+                clamp(-50.0f, 50.0f, posOffset.y); 
 
-                std::cout << "posOffset: " << posOffset.x << ", " << posOffset.y << std::endl;
                 float magnitude = glm::length(posOffset) / (timeDiff * timeDiff);
+                // add force depending on camera's position 
                 glm::vec4 y = glm::vec4(posOffset, 0,0) * glm::vec4(1, 1, 0, 0) * trackball.Get3DViewCameraMatrix();
                 glm::vec4 x = posOffset.y * glm::vec4(1, 0, 0, 0) * trackball.Get3DViewCameraMatrix();
                 y = y / (timeDiff * timeDiff);
                 x = x / (timeDiff * timeDiff);
-                //std::cout << dragV.x << ", " << dragV.y << std::endl;
-                externalForce += glm::vec3(y); // look at camera's direction
-                //std::coucct << "add force" << std::endl;
-                // no need global drag
+                externalForce += glm::vec3(y); 
             }
         }
 
-
         mouseLeft = false;
-
     }
     if (button == GLFW_MOUSE_BUTTON_MIDDLE && state == GLFW_PRESS)
     {
@@ -444,7 +439,6 @@ void DrawHackScene(){
 /// </summary>
 void DrawScene()
 {
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear FBO texture
 
     const glm::mat4 V = glm::lookAt(glm::vec3(CameraData.eye), glm::vec3(0.0f), glm::vec3(CameraData.up));
@@ -454,15 +448,10 @@ void DrawScene()
     glUseProgram(shader_program);
     glViewport(0, 0, CameraData.screen.x, CameraData.screen.y); // Change viewport size
 
-    // Get location for shader uniform variable :: for cube 
+    // Get location for shader uniform variable
     glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
     glUniformMatrix4fv(UniformLocs::V, 1, false, glm::value_ptr(V));
     // cube passes its own M matrix
-
-    // for debugging
-    /*glUniform1i(UniformLocs::pass, FRONT_FACES);
-    myCube->render(1, showDiscrete, drawType::DRAWTRI);
-    return;*/
 
     // Pass 0: Draw background
     glUniform1i(UniformLocs::pass, BACKGROUND);
@@ -501,13 +490,12 @@ void DrawScene()
     glBindVertexArray(attribless_vao);
     glViewport(0, 0, CameraData.screen.x, CameraData.screen.y);
     draw_attribless_quad();
-    //glEnable(GL_DEPTH_TEST);
 
-    glUseProgram(debug_shader_program);
-    glViewport(0, 0, CameraData.resolution.x, CameraData.resolution.y);
-    // draw plate
+    // draw plate with debug line shader
     if (myCube->fixedFloor) {
         // show plate
+        glUseProgram(debug_shader_program);
+        glViewport(0, 0, CameraData.resolution.x, CameraData.resolution.y);
         glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
         myPlate->render(UniformLocs::M);
     }
@@ -515,21 +503,15 @@ void DrawScene()
     if (debugMode) {
 
         glUseProgram(debug_shader_program);
-        // draw onto viewport's regular size (window size) 
-        // actually should draw to max size
-
         glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
 
         glViewport(0, 0, CameraData.resolution.x, CameraData.resolution.y);
-        /*int PVM_loc = glGetUniformLocation(debug_shader_program, "PVM");
-        glUniformMatrix4fv(PVM_loc, 1, false, glm::value_ptr(PVM));*/
 
         // draw points on top 
         myCube->render(UniformLocs::M, showDiscrete, showSpring, debugMode);
-        // make render debug with options for points and spring as another option 
 
-        // draw bounding box
         if (showBB) {
+            // draw bounding box
             boundingBox->render(UniformLocs::M);
         }
     }
@@ -601,25 +583,22 @@ void idle()
        myCube->fixedFloor = cubeFixedFloor;
        myCube->reset();
        myPlate->setPosition(initPlatePos, fTimeStep);
+
        // need to reconstrain since new masspoints are created
-       // TODO can we just reset mass point locs? 
        if (myCube->fixedFloor) {
            myPlate->setConstraintPoints(myCube->bottomFace);
        }
-      
    }
 
-   // camera
-   if (needCamReset) {
-       CameraData.eye = initCamPos;
-       trackball = TrackBallC();
-   }
+    // camera
+    if (needCamReset) {
+        CameraData.eye = initCamPos;
+        trackball = TrackBallC();
+    }
    
-   // physics
-   //std::cout << "apply force" << std::endl;
-   myCube->setExternalForce(addGravity ? externalForce + gravity : externalForce);
-   externalForce *= forceDamping;
-   //std::cout << "reset force" << std::endl;
+    // physics
+    myCube->setExternalForce(addGravity ? externalForce + gravity : externalForce);
+    externalForce *= forceDamping;
     glUniform1f(UniformLocs::time, time_sec);
 
 }
@@ -631,7 +610,7 @@ void reload_shader()
 
     if (new_shader == -1 || new_debug_shader == -1) // loading failed
     {
-        glClearColor(1.0f, 0.0f, 1.0f, 0.0f); //change clear color if shader can't be compiled
+        glClearColor(1.0f, 0.0f, 1.0f, 0.0f); // change clear color if shader can't be compiled
     }
     else
     {
@@ -650,7 +629,7 @@ void reload_shader()
     }
 }
 
-//This function gets called when a key is pressed
+// This function gets called when a key is pressed
 void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 
@@ -708,12 +687,12 @@ void resize(GLFWwindow* window, int width, int height)
     CameraData.resolution = glm::vec4(width, height, float(width) / float(height), 0.0f);
 }
 
-//Initialize OpenGL state. This function only gets called once.
+// Initialize OpenGL state. This function only gets called once.
 void initOpenGL()
 {
     glewInit();
 
-    //Print out information about the OpenGL version supported by the graphics driver.	
+    // Print out information about the OpenGL version supported by the graphics driver.	
     std::cout << "Vendor: " << glGetString(GL_VENDOR) << std::endl;
     std::cout << "Renderer: " << glGetString(GL_RENDERER) << std::endl;
     std::cout << "Version: " << glGetString(GL_VERSION) << std::endl;

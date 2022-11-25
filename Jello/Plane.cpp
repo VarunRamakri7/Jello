@@ -24,7 +24,8 @@ void Plane::render(GLuint modelParameter) {
     glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
     glEnableVertexAttribArray(debugPosLoc);
 
-    glDrawArrays(GL_LINES, 0, dataSize / 3);
+    // draw as lines (show only frame)
+    glDrawArrays(GL_LINES, 0, this->dataSize / 3);
 
     // unbind
     glBindVertexArray(0);
@@ -42,19 +43,19 @@ glm::vec3 Plane::getPosition() {
 
 void Plane::initArrays() {
     // init buffers
-
-    // init buffers
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
     // attribute locations
     glBindAttribLocation(debugShader, debugPosLoc, "pos_attrib");
     glEnableVertexAttribArray(debugPosLoc);
     glVertexAttribPointer(debugPosLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
     // send to GPU
-    // rendering as triangle strip
+    // rendering as 4 lines
+    // line 1
     this->data.push_back(this->pointA.x);
     this->data.push_back(this->pointA.y);
     this->data.push_back(this->pointA.z);
@@ -63,6 +64,7 @@ void Plane::initArrays() {
     this->data.push_back(this->pointC.y);
     this->data.push_back(this->pointC.z);
 
+    // line 2
     this->data.push_back(this->pointB.x);
     this->data.push_back(this->pointB.y);
     this->data.push_back(this->pointB.z);
@@ -71,6 +73,7 @@ void Plane::initArrays() {
     this->data.push_back(this->pointD.y);
     this->data.push_back(this->pointD.z);
 
+    // line 3
     this->data.push_back(this->pointC.x);
     this->data.push_back(this->pointC.y);
     this->data.push_back(this->pointC.z);
@@ -79,6 +82,7 @@ void Plane::initArrays() {
     this->data.push_back(this->pointD.y);
     this->data.push_back(this->pointD.z);
 
+    // line 4
     this->data.push_back(this->pointA.x);
     this->data.push_back(this->pointA.y);
     this->data.push_back(this->pointA.z);
@@ -89,6 +93,7 @@ void Plane::initArrays() {
 
     this->dataSize = this->data.size();
 
+    // send data to GPU
     glBufferData(GL_ARRAY_BUFFER, this->dataSize * sizeof(GLfloat), this->data.data(), GL_STATIC_DRAW);
 
     this->data.clear();

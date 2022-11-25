@@ -32,12 +32,13 @@ class Plane {
 
         glm::vec3 position = glm::vec3(0.0f);
 
+        // render
         GLuint VBO, VAO;
         std::vector <GLfloat> data{};
-        int debugPosLoc = 0;
         int dataSize = 0;
         glm::mat4 modelMatrix = glm::mat4(1.0f);
         GLuint debugShader;
+        int debugPosLoc = 0; // attribute location for vertex position in debug shader
 
         void initArrays();
 

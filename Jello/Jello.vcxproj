@@ -168,8 +168,6 @@
     <ClCompile Include="Cube.cpp" />
     <ClCompile Include="DebugCallback.cpp" />
     <ClCompile Include="InitShader.cpp" />
-    <ClCompile Include="LoadMesh.cpp" />
-    <ClCompile Include="LoadTexture.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="MassPoint.cpp" />
     <ClCompile Include="Physics.cpp" />
@@ -193,8 +191,6 @@
     <ClInclude Include="Physics.h" />
     <ClInclude Include="MassPoint.h" />
     <ClInclude Include="InitShader.h" />
-    <ClInclude Include="LoadMesh.h" />
-    <ClInclude Include="LoadTexture.h" />
     <ClInclude Include="Plane.h" />
     <ClInclude Include="Plate.h" />
     <ClInclude Include="trackball.h" />

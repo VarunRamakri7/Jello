@@ -1,14 +1,8 @@
 #include "Physics.h"
 #include <iostream>
 
-// COLLISION DETECTION
-
+// COLLISION 
 bool isPointInNegativeSide(const glm::dvec3& point, const Plane& plane){
-
-    // ax + by + cz - (ax1 + by1+ cz1) = 0
-    // (normal . point) - (normal . pointinplane) = 0
-    // F(x,y,z)>0 on one side of the plane and F(x,y,z)<0 on the other
-    // return pl.a * pt.x + pl.b * pt.y + pl.c * pt.z + pl.d >= 0;
     return glm::dot(plane.normal, point) - glm::dot(plane.normal, plane.pointInPlane) < 0;
 }
 
@@ -24,18 +18,14 @@ bool isPointInBox(glm::dvec3* const point, BoundingBox* const bbox) {
  * @param pl - plane
  * @return closest point to point in plane
  */
-// NOTE THIS WILL ONLY WORK FOR BOUDNING BOX AND NOT OTHER CUBES INSIDE THE BOX
-// BECAUSE THERES NO BOUNDARIES< ONLY CHECKING IF INSIDE
+// NOTE: this will only work for boudning box and not other cubes inside the box
+// because theres no boundaries > only checking if inside
 glm::dvec3 computeClosestPoint(const glm::dvec3& point, Plane plane)
 {
-    // TO DO define the point and vectors as glm::dvec3? 
-
-    // get normal
-
     // create a ray with origin at pt, with -n direction and parameter t: r = pt - nt
     // compute t when ray intersect with plane ax + by + cz + d = 0
     // t = (<n,pt>+d)/<n,n>
-    double length2 = glm::dot(plane.normal, plane.normal); // length2
+    double length2 = glm::dot(plane.normal, plane.normal); 
     double dot0 = glm::dot(plane.normal, point);
 
     double t = (dot0 + glm::dot(plane.normal, plane.pointInPlane)) / length2;
@@ -56,13 +46,11 @@ bool checkCollision(MassPoint* massPoint, BoundingBox* const bbox, std::vector<c
         for (int p = 0; p < 6; p++) {
             if (isPointInNegativeSide(*pos, *bbox->planes[p])) {
                 // find intersection point in plane 
-
                 // store mass point, closest point of collision, list of collision springs to process 
                 struct collisionPoint cp;
                 cp.closestPoint = computeClosestPoint(*pos, *bbox->planes[p]);
                 cp.mp = massPoint;
                 collisionPoints.push_back(cp);
-                // process for all corners that maybe intersecting, so maybe it'll work 
             }
         }
     }
@@ -80,14 +68,11 @@ bool checkCollision(MassPoint* massPoint, Plane* const plane, std::vector<collis
 
     if (isPointInNegativeSide(*pos, *plane)) {
         // find intersection point in plane 
-        //std::cout << "collide!" << std::endl;
-
         // store mass point, closest point of collision, list of collision springs to process 
         struct collisionPoint cp;
         cp.closestPoint = computeClosestPoint(*pos, *plane);
         cp.mp = massPoint;
         collisionPoints.push_back(cp);
-        // process for all corners that maybe intersecting, so maybe it'll work 
     }
 
     return collisionPoints.size() != 0;
@@ -102,9 +87,7 @@ void processCollisionResponse(Cube* const cube, std::vector<collisionPoint>& col
     // compute acceleration for each collision
     for (const auto& s : collisionPoints)
     {
-
         // compute elastic force and damping
-        // TODO collosion has different stiffness and damping value 
         glm::dvec3 springForce = calculateSpringForce(cube->stiffness , *(s.mp->getPosition()), s.closestPoint, 0.0);
         glm::dvec3 dampingForce = calculateDampingForce(cube->damping * 50.0, *(s.mp->getPosition()), s.closestPoint, *(s.mp->getVelocity()), glm::dvec3(0.0));
 
@@ -146,13 +129,13 @@ void computeSpringAcceleration(const double& stiffness, const double& damping, c
  * @param Cube* cube
  */
 void computeAcceleration(Cube* cube, double timeStep) {
-    // TODO pass in list of objects in scene or use as extern variable 
     // reset accumulated acceleration to 0
     cube->resetAcceleration();
 
     std::vector<collisionPoint> collisionPoints;
 
     // goes through all masspoints
+    #pragma omp parallel for
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
 
@@ -161,8 +144,6 @@ void computeAcceleration(Cube* cube, double timeStep) {
 
         // check if each point collides with any objects in the scene
         checkCollision(currentPoint, boundingBox, collisionPoints);
-        // check collision with plate 
-        //checkCollision(currentPoint, myPlate->platePlane, collisionPoints);
 
         // external forces
         // TODO  division is expensive? 
@@ -202,7 +183,6 @@ glm::dvec3 calculateSpringForce(const double& kh, const glm::dvec3& pointA, cons
     return (-1.0) * kh * (currentLength - restLength) * (L / currentLength);
 }
 
-
 /**
  * computes damping force in 3D 
  * @param const double* const kd - damping constant (should be negative)
@@ -223,6 +203,7 @@ glm::dvec3 calculateDampingForce(const double& kd, const glm::dvec3& pointA, con
     return (-1.0) * kd * (glm::dot(velocityDiff, L) / lengthL) * (L / lengthL);
 }
 
+
 // INTEGRATORS - numerical solution to analytical problems
 
 /**
@@ -241,7 +222,6 @@ void integrateEuler(Cube* const cube, double timeStep) {
     #pragma omp parallel for
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
-        // std::cout << "threads:" << omp_get_thread_num() << std::endl;
         if (currentPoint->isFixed() == true) {
             // stays the same
             continue;
@@ -285,14 +265,13 @@ void integrateRK4(Cube* cube, double timeStep) {
     computeAcceleration(cube, timeStep);
 
     // integrate
+    #pragma omp parallel for
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
         MassPoint* bufferPoint = buffer.discretePoints[i];
 
         // dx/dt = F(t, x)
         // 1st step: k1 =  F(t0, x0)
-
- 
         glm::dvec3 dVel = *currentPoint->getVelocity() * timeStep;
         // Velocity
         glm::dvec3 dAcc = *currentPoint->getAcceleration() * timeStep;
@@ -317,6 +296,7 @@ void integrateRK4(Cube* cube, double timeStep) {
 
     computeAcceleration(&buffer, timeStep);
 
+    #pragma omp parallel for
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
         MassPoint* bufferPoint = buffer.discretePoints[i];
@@ -347,6 +327,7 @@ void integrateRK4(Cube* cube, double timeStep) {
 
     computeAcceleration(&buffer, timeStep);
 
+    #pragma omp parallel for
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
         MassPoint* bufferPoint = buffer.discretePoints[i];
@@ -377,6 +358,7 @@ void integrateRK4(Cube* cube, double timeStep) {
 
     computeAcceleration(&buffer, timeStep);
 
+    #pragma omp parallel for
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
         MassPoint* bufferPoint = buffer.discretePoints[i];
