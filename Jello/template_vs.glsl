@@ -2,8 +2,9 @@
 
 layout(location = 0) uniform mat4 M;
 layout(location = 1) uniform mat4 PV;
-layout(location = 2) uniform float time;
-layout(location = 3) uniform int pass;
+layout(location = 2) uniform mat4 V;
+layout(location = 3) uniform float time;
+layout(location = 4) uniform int pass;
 
 uniform sampler2D fboTex;
 
@@ -16,6 +17,7 @@ layout(std140, binding = 4) uniform CameraUniforms {
     vec4 eye;
     vec4 up;
     vec4 resolution;
+	ivec2 screen;
 } Camera;
 
 in vec3 pos_attrib; // This variable holds the position of vertices
@@ -39,16 +41,21 @@ const vec4 quad[4] = vec4[] (vec4(-1.0, 1.0, 0.0, 1.0),
 
 void main(void)
 {
+	mat4 modelView = V * M;
+
 	// For all passes except QUAD
 	if (pass != 4)
 	{
 		// Assign position depending on pass
 		outData.position = (pass == 0) ? pos_attrib : vec3(M * vec4(pos_attrib, 1.0)); // World-space vertex position
 		outData.tex_coord = tex_coord_attrib; // Send tex_coord to fragment shader
-		outData.light_dir = normalize(Light.light_w).xyz; // directional light
+	
+		outData.eye_dir = -1.0 * normalize(vec3(modelView * vec4(outData.position, 1.0)));
+		outData.light_dir = normalize(Light.light_w).xyz;
+
 		outData.normal = normalize(M * vec4(normal_attrib, 0.0)).xyz;
-		outData.depth =  (pass == 0) ? vec4(1.0f) : Camera.eye - (PV * vec4(pos_attrib, 1.0)); // Send eye-space depth
-        outData.eye_dir = -1.0 * normalize(vec3(outData.depth));
+
+		outData.depth =  (pass == 0) ? vec4(0.0f) : Camera.eye - (PV * vec4(pos_attrib, 1.0)); // Send eye-space depth
 
 		gl_Position = (pass == 0) ? vec4(outData.position, 1.0) : PV * vec4(outData.position, 1.0);
 	}

@@ -70,6 +70,7 @@ const float bg_vertices[] =
     -1.0f, 1.0f,    0.0f, 1.0f
 };
 
+// camera == window
 // window width and height is the camera's resolution
 float cameraNear = 0.01f;
 float cameraFar = 100.f;
@@ -77,17 +78,18 @@ struct CameraUniforms {
     glm::vec4 eye = glm::vec4(0.0f, 2.5f, 5.0f, 0.0f);
     glm::vec4 up = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
     glm::vec4 resolution = glm::vec4(800.0f, 800.0f, 1.0f, 0.0f); // Width, Height, Aspect Ratio
+    glm::ivec2 screen = glm::ivec2(0.0f, 0.0f);
 }CameraData;
 
 struct LightUniforms {
     glm::vec4 light_w = glm::vec4(0.0f, 5.0f, 5.0f, 1.0f); // World-space light position
-    glm::vec4 bg_color = glm::vec4(1.0f, 0.67f, 0.67f, 1.0f); // Background color
+    glm::vec4 bg_color = glm::vec4(1.0f, 0.9f, 0.9f, 1.0f); // Background color
 } LightData;
 
 struct MaterialUniforms {
-    glm::vec4 base_color = glm::vec4(0.75f, 0.75f, 0.75f, 1.0f); // base color
+    glm::vec4 base_color = glm::vec4(1.0f, 0.85f, 0.85f, 1.0f); // base color
     glm::vec4 spec_color = glm::vec4(0.85f, 0.85f, 0.85f, 1.0f); // Specular Color
-    float spec_factor = 0.1f; // Specular factor
+    glm::vec4 absorption = glm::vec4(0.4f, 0.4f, 0.1f, 0.1f); // x,y,z are absorbption, z is specular factor
 } MaterialData;
 
 // Locations for the uniforms which are not in uniform blocks
@@ -95,8 +97,9 @@ namespace UniformLocs
 {
     int M = 0;
     int PV = 1;
-    int time = 2;
-    int pass = 3;
+    int V = 2;
+    int time = 3;
+    int pass = 4;
 }
 
 GLuint light_ubo = -1;
@@ -262,8 +265,9 @@ void draw_gui(GLFWwindow* window)
    ImGui::SliderFloat3("Light Position", &LightData.light_w.x, -10.0f, 10.0f);
 
    ImGui::ColorEdit3("Base Color", &MaterialData.base_color.r, 0);
+   ImGui::ColorEdit4("Absorbption", &MaterialData.absorption.r, 0);
    ImGui::ColorEdit3("Specular Color", &MaterialData.spec_color.r, 0);
-   ImGui::SliderFloat("Specular Factor", &MaterialData.spec_factor, 0.1f, 1.0f);
+   //ImGui::SliderFloat("Specular Factor", &MaterialData.absorption.z, 0.1f, 1.0f);
    ImGui::ColorEdit3("Background Color", &LightData.bg_color.r, 0);
 
    ImGui::End();
@@ -478,7 +482,7 @@ void DrawScene()
     glBindFramebuffer(GL_FRAMEBUFFER, FBO); // Render to FBO
     glDrawBuffers(2, buffers); // Draw to color attachment 0 and 1
     
-    glViewport(0, 0, screen_width, screen_height); // Change viewport size
+    glViewport(0, 0, CameraData.screen.x, CameraData.screen.y); // Change viewport size
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear FBO texture
     
     // Draw background quad
@@ -498,7 +502,7 @@ void DrawScene()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDrawBuffer(GL_BACK);
     
-    glViewport(0, 0, screen_width, screen_height);
+    glViewport(0, 0, CameraData.screen.x, CameraData.screen.y);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear FBO texture
 
     glBindTextureUnit(0, fbo_tex); // Bind color texture
@@ -545,10 +549,20 @@ void DrawScene()
 // This function gets called every time the scene gets redisplayed
 void display(GLFWwindow* window)
 {
-    //Clear the screen to the color previously specified in the glClearColor(...) call.
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-   
-    glUseProgram(shader_program); 
+
+    glm::mat4 M = glm::rotate(angle, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::vec3(scale * mesh_data.mScaleFactor));
+    glm::mat4 V = glm::lookAt(glm::vec3(CameraData.eye), glm::vec3(0.0f), glm::vec3(CameraData.up));
+    glm::mat4 P = glm::perspective(glm::pi<float>() / 4.0f, CameraData.resolution.z, 0.1f, 100.0f);
+
+    glUseProgram(shader_program);
+
+    //glBindTexture(2, texture_id);
+
+    // Get location for shader uniform variable
+    glm::mat4 PV = P * V;
+    glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
+    glUniformMatrix4fv(UniformLocs::M, 1, false, glm::value_ptr(M));
+    glUniformMatrix4fv(UniformLocs::V, 1, false, glm::value_ptr(V));
 
     glBindBuffer(GL_UNIFORM_BUFFER, material_ubo); //Bind the OpenGL UBO before we update the data.
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(MaterialUniforms), &MaterialData); //Upload the new uniform values.
@@ -699,8 +713,8 @@ void GetScreenSize()
 {
     // Get screen dimensions
     const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    screen_width = mode->width;
-    screen_height = mode->height;
+    CameraData.screen.x = mode->width;
+    CameraData.screen.y = mode->height;
 }
 
 void resize(GLFWwindow* window, int width, int height)
@@ -732,7 +746,7 @@ void initOpenGL()
     // For Color Attachment
     glGenTextures(1, &fbo_tex);
     glBindTexture(GL_TEXTURE_2D, fbo_tex); // Bind color texture
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, screen_width, screen_height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0); // Use screen size
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, CameraData.screen.x, CameraData.screen.y, 0, GL_RGB, GL_UNSIGNED_BYTE, 0); // Use screen size
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -741,7 +755,7 @@ void initOpenGL()
     // Create depth texture
     glGenTextures(1, &depth_tex);
     glBindTexture(GL_TEXTURE_2D, depth_tex); // Bind depth texture
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, screen_width, screen_height, 0, GL_RED, GL_FLOAT, 0); // Use screen size
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, CameraData.screen.x, CameraData.screen.y, 0, GL_RED, GL_FLOAT, 0); // Use screen size
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
