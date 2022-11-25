@@ -15,9 +15,9 @@
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
+#include <algorithm>
 
 #include "InitShader.h"    //Functions for loading shaders from text files
-#include "LoadMesh.h"      //Functions for creating OpenGL buffers from mesh files
 #include "LoadTexture.h"   //Functions for creating OpenGL textures from image files
 #include "VideoMux.h"      //Functions for saving videos
 #include "trackball.h"
@@ -30,9 +30,6 @@
 #include "Cube.h"
 
 const char* const window_title = "Jello";
-
-int screen_width; // max for resize
-int screen_height;
 
 static const std::string vertex_shader("template_vs.glsl");
 static const std::string fragment_shader("jello_fs.glsl");
@@ -53,8 +50,6 @@ GLuint attribless_vao = -1;
 
 GLuint rectVAO;
 GLuint rectVBO;
-
-static const std::string mesh_name = "cube.obj";
 
 GLuint bg_vao = -1;
 GLuint bg_vbo = -1;
@@ -458,7 +453,7 @@ void DrawScene()
     //    myPlate->render(1);
     //}
     glUseProgram(shader_program);
-    glViewport(0, 0, screen_width, screen_height); // Change viewport size
+    glViewport(0, 0, CameraData.screen.x, CameraData.screen.y); // Change viewport size
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear FBO texture
 
     const glm::mat4 M = myCube->getModelMatrix();
@@ -467,9 +462,9 @@ void DrawScene()
     const glm::mat4 PV = P * V * trackball.Get3DViewCameraMatrix();
 
     // Get location for shader uniform variable
-
     glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
     glUniformMatrix4fv(UniformLocs::M, 1, false, glm::value_ptr(M));
+    glUniformMatrix4fv(UniformLocs::V, 1, false, glm::value_ptr(V));
 
     // for debugging
     /*glUniform1i(UniformLocs::pass, FRONT_FACES);
@@ -511,7 +506,7 @@ void DrawScene()
     glDisable(GL_DEPTH_TEST);
 
     glBindVertexArray(attribless_vao);
-    glViewport(0, 0, screen_width, screen_height);
+    glViewport(0, 0, CameraData.screen.x, CameraData.screen.y);
     draw_attribless_quad();
 
     //glEnable(GL_DEPTH_TEST);
@@ -549,20 +544,10 @@ void DrawScene()
 // This function gets called every time the scene gets redisplayed
 void display(GLFWwindow* window)
 {
-
-    glm::mat4 M = glm::rotate(angle, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::vec3(scale * mesh_data.mScaleFactor));
-    glm::mat4 V = glm::lookAt(glm::vec3(CameraData.eye), glm::vec3(0.0f), glm::vec3(CameraData.up));
-    glm::mat4 P = glm::perspective(glm::pi<float>() / 4.0f, CameraData.resolution.z, 0.1f, 100.0f);
-
-    glUseProgram(shader_program);
-
-    //glBindTexture(2, texture_id);
-
-    // Get location for shader uniform variable
-    glm::mat4 PV = P * V;
-    glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
-    glUniformMatrix4fv(UniformLocs::M, 1, false, glm::value_ptr(M));
-    glUniformMatrix4fv(UniformLocs::V, 1, false, glm::value_ptr(V));
+    //Clear the screen to the color previously specified in the glClearColor(...) call.
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+   
+    glUseProgram(shader_program); 
 
     glBindBuffer(GL_UNIFORM_BUFFER, material_ubo); //Bind the OpenGL UBO before we update the data.
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(MaterialUniforms), &MaterialData); //Upload the new uniform values.
