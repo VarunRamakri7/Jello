@@ -233,7 +233,7 @@ void Cube::resetAcceleration() {
     }
 }
 
-void Cube::setExternalForce(glm::vec3 force) {
+void Cube::setExternalForce(glm::dvec3 force) {
     for (int i = 0; i < discretePoints.size(); i++) {
         MassPoint* currentPoint = discretePoints[i];
 
@@ -249,7 +249,7 @@ void Cube::setExternalForce(glm::vec3 force) {
 void Cube::addTriangle(glm::dvec3* posA, glm::dvec3* posB, glm::dvec3* posC) {
 
     // normal
-    glm::vec3 normal = glm::cross(*posB - *posA, *posC - *posA); // point 2 - point 1  x  point 3 - point 1
+    glm::dvec3 normal = glm::cross(*posB - *posA, *posC - *posA); // point 2 - point 1  x  point 3 - point 1
     normal = glm::normalize(normal);
 
     // point 1

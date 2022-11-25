@@ -3,31 +3,6 @@
 
 // COLLISION DETECTION
 
-/**
- * checks if given point is in triangle formed by the 3 given points
- * @param glm::vec3 point
- * @param glm::vec3 triangleA - vertex A of triangle
- * @param glm::vec3 triangleB - vertex B of triangle
- * @param glm::vec3 triangleC - vertex C of triangle
- * @return bool - true if in the triangle
- */
-bool isPointInTriangle(glm::vec3 point, glm::vec3 triangleA, glm::vec3 triangleB, glm::vec3 triangleC) {
-    if (isSameSide(point, triangleA, triangleB, triangleC) && isSameSide(point, triangleB, triangleA, triangleC) && isSameSide(point, triangleC, triangleA, triangleB)) {
-        return true;
-    }
-    return false;
-}
-
-bool isSameSide(glm::vec3 lineA, glm::vec3 lineB, glm::vec3 pointA, glm::vec3 pointB) {
-    glm::vec3 crossA = glm::cross(pointB - pointA, lineA - pointA);
-    glm::vec3 crossB = glm::cross(pointB - pointA, lineB - pointA);
-
-    if (glm::dot(crossA, crossB) >= 0) {
-        return true;
-    }
-    return false;
-}
-
 bool isPointInNegativeSide(const glm::dvec3& point, const Plane& plane){
 
     // ax + by + cz - (ax1 + by1+ cz1) = 0

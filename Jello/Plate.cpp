@@ -1,9 +1,9 @@
 #include "Plate.h"
 #include <iostream>
 
-Plate::Plate(glm::vec3 center, double size, GLuint debugShader) {
+Plate::Plate(glm::vec3 center, float size, GLuint debugShader) {
     this->size = size;
-    double half = size * 0.5;
+    float half = size * 0.5f;
     glm::vec3 pointA = center + glm::vec3(-half, 0, -half); // top left
     glm::vec3 pointB = center + glm::vec3(half, 0, -half); // top right
     glm::vec3 pointC = center + glm::vec3(-half, 0, half); // bottom left
@@ -17,9 +17,8 @@ void Plate::render(GLuint modelParameter) {
 }
 
 void Plate::setPosition(glm::vec3 position, double timeStep) {
-    double half = this->size * 0.5;
+    float half = this->size * 0.5f;
 
-    //glm::dvec3 posOffset = position - this->position;
     glm::dvec3 posOffset = position - platePlane->getPosition();
 
     // move constraint points
@@ -28,12 +27,11 @@ void Plate::setPosition(glm::vec3 position, double timeStep) {
         p->setPosition(*p->getPosition() + posOffset);
         // change in position over change in time
         // should time be a global variable 
-        glm::dvec3 vel = posOffset / timeStep;
+        glm::vec3 vel = posOffset / timeStep;
 
         p->setVelocity(vel);
     }
 
-    //this->position = position;
     platePlane->setPosition(position);
 }
 

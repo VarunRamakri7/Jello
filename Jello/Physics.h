@@ -14,6 +14,7 @@
 #include "BoundingBox.h"
 
 // takes care of the interactions between the objects in scene
+// all mass points (physics) related should use double precision
 
 // global variable
 extern BoundingBox* boundingBox;
@@ -39,8 +40,6 @@ void integrateEuler(Cube* cube, double timeStep);
 void integrateRK4(Cube* cube, double timeStep);
 
 // collision
-bool isPointInTriangle(const glm::vec3 point, const glm::vec3 triangleA, const glm::vec3 triangleB, const glm::vec3 triangleC);
-bool isSameSide(const glm::vec3 lineA, const glm::vec3 lineB, const glm::vec3 pointA, const glm::vec3 pointB);
 bool isPointInNegativeSide(const glm::dvec3& point, const Plane& plane);
 bool checkCollision(MassPoint* massPoint, BoundingBox* const bbox, std::vector<collisionPoint>& collisionPoints);
 bool checkCollision(MassPoint* massPoint, Plane* const plane, std::vector<collisionPoint>& collisionPoints);

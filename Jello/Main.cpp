@@ -40,9 +40,9 @@ static const std::string debug_fragment_shader("debug_fs.glsl");
 Cube* myCube;
 Plate* myPlate;
 BoundingBox* boundingBox;
-glm::dvec3 initPlatePos = glm::dvec3(0, 0.0, 0.5);
-glm::dvec3 initCubePos = glm::dvec3(-0.5, 0.0, 0.5);
-glm::vec4 initCamPos = glm::vec4(0.0f, 2.5f, 5.0f, 1.0f);
+glm::vec3 initPlatePos = glm::vec3(0.0f, 0.0f, 0.5f);
+glm::vec3 initCubePos = glm::vec3(-0.5f, 0.0f, 0.5f);
+glm::vec4 initCamPos = glm::vec4(0.0f, 2.5f, 5.0f, 1.0f); 
 
 GLuint shader_program = -1; // to draw jello
 GLuint debug_shader_program = -1; // to visualize masspoints and bounding box
@@ -129,7 +129,7 @@ bool recording = false;
 // interactive
 TrackBallC trackball;
 bool mouseLeft, mouseMid, mouseRight;
-int mouseX, mouseY; // current mouse positions
+double mouseX, mouseY; // current mouse positions
 glm::vec2 mouseClickedPos; // stored mouse position on click
 float mouseClickTime = 0.0f; // track time elapsed since clicked
 glm::vec3 externalForce = glm::vec3(0.0); // total drag acceleration 
@@ -164,7 +164,7 @@ bool needCamReset = false;
 
 
 
-void clamp(int min, int max, int& value) {
+void clamp(double min, double max, double& value) {
     value = std::min(value, max);
     value = std::max(value, min);
 }
@@ -232,8 +232,8 @@ void draw_gui(GLFWwindow* window)
    ImGui::SliderFloat("Damping", &myCube->damping, 0.0, 1.0f);
    ImGui::SliderFloat("Mass", &myCube->mass, 1.0f, 50.0f); // cannot be 0
  
+   // Jello
    ImGui::Text("Jello");
-   // store and submit on reset 
    ImGui::SliderInt("Jello Resolution", &cubeResolution, 1, 8);
    ImGui::Checkbox("On Plate", &cubeFixedFloor);
    ImGui::Checkbox("Structural Spring", &cubeStructuralSpring);
@@ -241,37 +241,33 @@ void draw_gui(GLFWwindow* window)
    ImGui::Checkbox("Bend Spring", &cubeBendSpring);
    ImGui::Checkbox("Add Gravity", &addGravity);
 
+   // Reset buttons
    needReset = ImGui::Button("Reset");
    needCamReset = ImGui::Button("Camera to Origin");
 
    ImGui::Text("Integrators");
    ImGui::RadioButton("Euler", &integrator, integratorEnum::EULER);
    ImGui::RadioButton("RK4", &integrator, integratorEnum::RK4);
-   ImGui::SliderFloat("TimeStep", &fTimeStep, 0.001, 0.01);
+   ImGui::SliderFloat("TimeStep", &fTimeStep, 0.001f, 0.01f);
 
    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
    ImGui::End();
 
-   ImGui::Begin("Camera");
-
-   //ImGui::SliderFloat3("Camera Eye", &CameraData.eye.x, -10.0f, 10.0f);
-
-   ImGui::Image((void*)fbo_tex, ImVec2(128.0f, 128.0f), ImVec2(0.0, 1.0), ImVec2(1.0, 0.0)); ImGui::SameLine(); // Show FBO texture
-   ImGui::Image((void*)depth_tex, ImVec2(128.0f, 128.0f), ImVec2(0.0, 1.0), ImVec2(1.0, 0.0)); // Show depth texture
-   
-   ImGui::End();
-
+   // Shading
    ImGui::Begin("Shading");
-
    ImGui::SliderFloat3("Light Position", &LightData.light_w.x, -10.0f, 10.0f);
-
    ImGui::ColorEdit3("Base Color", &MaterialData.base_color.r, 0);
    ImGui::ColorEdit4("Absorbption", &MaterialData.absorption.r, 0);
    ImGui::ColorEdit3("Specular Color", &MaterialData.spec_color.r, 0);
-   //ImGui::SliderFloat("Specular Factor", &MaterialData.absorption.z, 0.1f, 1.0f);
    ImGui::ColorEdit3("Background Color", &LightData.bg_color.r, 0);
-
    ImGui::End();
+
+   /* for Debugging camera
+   ImGui::Begin("Camera");
+   ImGui::Image((void*)fbo_tex, ImVec2(128.0f, 128.0f), ImVec2(0.0, 1.0), ImVec2(1.0, 0.0)); ImGui::SameLine(); // Show FBO texture
+   ImGui::Image((void*)depth_tex, ImVec2(128.0f, 128.0f), ImVec2(0.0, 1.0), ImVec2(1.0, 0.0)); // Show depth texture
+   ImGui::End();
+   */
 
    //End ImGui Frame
    ImGui::Render();
@@ -355,8 +351,8 @@ void MouseButtonCallback(GLFWwindow* window, int button, int state, int mods) {
 
         // get position offset
         // vector from clicked to current in world space
-        clamp(0, int(CameraData.resolution.y), mouseY);
-        clamp(0, int(CameraData.resolution.x), mouseX);
+        clamp(0.0, double(CameraData.resolution.y), mouseY);
+        clamp(0.0, double(CameraData.resolution.x), mouseX);
         //glm::vec4 clickedW;
         //glm::vec4 currentW;
         //getWorld(glm::vec2(mouseX, mouseY), currentW);
@@ -584,8 +580,8 @@ void idle()
    // only if not moving camera
    if (mouseLeft && movePlate) {
        // dragging mouse = drag plate
-       clamp(0, int(CameraData.resolution.y), mouseY);
-       clamp(0, int(CameraData.resolution.x), mouseX);
+       clamp(0.0, double(CameraData.resolution.y), mouseY);
+       clamp(0.0, double(CameraData.resolution.x), mouseX);
        glm::vec4 currentW;
        getWorld(glm::vec2(mouseX, mouseY), currentW);
        myPlate->setPosition(glm::vec3(currentW.x, 0.0f, 0.0f), fTimeStep);
@@ -807,7 +803,7 @@ void buildScene() {
     // build scene
     myCube = new Cube(2, initCubePos, shader_program, debug_shader_program); // initial cube resolution = 2 
     myCube->setSpringMode(true, true, true);
-    boundingBox = new BoundingBox(6.0f, 6.0f, 6.0f, glm::vec3(-3.0f, 5.5f, 3.0f), debug_shader_program);
+    boundingBox = new BoundingBox(6, 6, 6, glm::vec3(-3.0f, 5.5f, 3.0f), debug_shader_program);
     myPlate = new Plate(initPlatePos, 2.0, debug_shader_program);
     if (myCube->fixedFloor) {
         myPlate->setConstraintPoints(myCube->bottomFace);
@@ -830,8 +826,8 @@ int main(int argc, char **argv){
     #endif
 
     // negotiate with the OpenGL
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4.6);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4.6);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */

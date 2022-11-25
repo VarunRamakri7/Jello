@@ -7,10 +7,10 @@
 class Plate {
 public:
     // square plate
-    Plate(glm::vec3 center, double size, GLuint debugShader);
+    Plate(glm::vec3 center, float size, GLuint debugShader);
     void render(GLuint modelParameter);
 
-    double size = 1;
+    float size = 1;
     Plane* platePlane;
     std::vector <MassPoint*> constraintPoints{};
 

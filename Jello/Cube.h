@@ -59,7 +59,7 @@ class Cube {
         std::vector <std::vector <MassPoint*>*> backFaces{ &rightFace, &backFace, &topFace }; // different winding order
 
         void resetAcceleration();
-        void setExternalForce(glm::vec3 force);
+        void setExternalForce(glm::dvec3 force);
 
     private:
         // render
