@@ -23,7 +23,7 @@ class Cube {
     public:
 
         Cube(); // default constructor
-        Cube(int resolution, GLint shader, GLint debug);
+        Cube(int resolution, glm::vec3 position, GLint shader, GLint debug);
         
         // setup
         void setSpringMode(bool structural, bool shear, bool bend);

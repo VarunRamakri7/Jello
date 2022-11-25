@@ -36,6 +36,14 @@ static const std::string fragment_shader("jello_fs.glsl");
 static const std::string debug_vertex_shader("debug_vs.glsl");
 static const std::string debug_fragment_shader("debug_fs.glsl");
 
+// scene
+Cube* myCube;
+Plate* myPlate;
+BoundingBox* boundingBox;
+glm::dvec3 initPlatePos = glm::dvec3(0, 0.0, 0.5);
+glm::dvec3 initCubePos = glm::dvec3(-0.5, 0.0, 0.5);
+glm::vec4 initCamPos = glm::vec4(0.0f, 2.5f, 5.0f, 1.0f);
+
 GLuint shader_program = -1; // to draw jello
 GLuint debug_shader_program = -1; // to visualize masspoints and bounding box
 float time_sec;
@@ -70,7 +78,7 @@ const float bg_vertices[] =
 float cameraNear = 0.01f;
 float cameraFar = 100.f;
 struct CameraUniforms {
-    glm::vec4 eye = glm::vec4(0.0f, 2.5f, 5.0f, 0.0f);
+    glm::vec4 eye = initCamPos;
     glm::vec4 up = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
     glm::vec4 resolution = glm::vec4(800.0f, 800.0f, 1.0f, 0.0f); // Width, Height, Aspect Ratio
     glm::ivec2 screen = glm::ivec2(0.0f, 0.0f);
@@ -152,12 +160,9 @@ bool cubeShearSpring = true;
 bool cubeBendSpring = true;
 
 bool needReset = false;
+bool needCamReset = false;
 
-// scene
-Cube* myCube;
-Plate* myPlate;
-BoundingBox* boundingBox;
-glm::dvec3 initPlatePos = glm::dvec3(0.5, 0.0, 0.5);
+
 
 void clamp(int min, int max, int& value) {
     value = std::min(value, max);
@@ -237,6 +242,7 @@ void draw_gui(GLFWwindow* window)
    ImGui::Checkbox("Add Gravity", &addGravity);
 
    needReset = ImGui::Button("Reset");
+   needCamReset = ImGui::Button("Camera to Origin");
 
    ImGui::Text("Integrators");
    ImGui::RadioButton("Euler", &integrator, integratorEnum::EULER);
@@ -606,6 +612,12 @@ void idle()
        }
       
    }
+
+   // camera
+   if (needCamReset) {
+       CameraData.eye = initCamPos;
+       trackball = TrackBallC();
+   }
    
    // physics
    //std::cout << "apply force" << std::endl;
@@ -793,7 +805,7 @@ void initOpenGL()
 
 void buildScene() {
     // build scene
-    myCube = new Cube(2, shader_program, debug_shader_program); // initial cube resolution = 2 
+    myCube = new Cube(2, initCubePos, shader_program, debug_shader_program); // initial cube resolution = 2 
     myCube->setSpringMode(true, true, true);
     boundingBox = new BoundingBox(6.0f, 6.0f, 6.0f, glm::vec3(-3.0f, 5.5f, 3.0f), debug_shader_program);
     myPlate = new Plate(initPlatePos, 2.0, debug_shader_program);

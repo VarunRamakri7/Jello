@@ -3,8 +3,9 @@
 
 #include <iostream>
 
-Cube::Cube(int resolution, GLint shader, GLint debug) {
+Cube::Cube(int resolution, glm::vec3 position, GLint shader, GLint debug) {
     this->resolution = resolution;
+    this->position = position;
     this->modelMatrix = glm::translate(glm::mat4(1.0f), this->position);
     // initial position only because mass points moves in cpu 
 
