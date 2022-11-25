@@ -144,9 +144,6 @@ enum integratorEnum {
 }; // euler = 0 , RK4 = 1
 int integrator = integratorEnum::EULER;
 // float values for it to be adjustable with ImGui
-float fStiffness = 50.f;
-float fDamping = 0.5f;
-float fMass = 1.0f;
 float fTimeStep = 0.005f;
 int cubeResolution = 2;
 bool cubeFixedFloor = true;
@@ -226,9 +223,9 @@ void draw_gui(GLFWwindow* window)
 
    // physics
    ImGui::Text("Physics");
-   ImGui::SliderFloat("Stiffness", &fStiffness, 0.0f, 100.0f);
-   ImGui::SliderFloat("Damping", &fDamping, 0.0, 1.0f);
-   ImGui::SliderFloat("Mass", &fMass, 0.0f, 50.0f);
+   ImGui::SliderFloat("Stiffness", &myCube->stiffness, 0.0f, 100.0f);
+   ImGui::SliderFloat("Damping", &myCube->damping, 0.0, 1.0f);
+   ImGui::SliderFloat("Mass", &myCube->mass, 1.0f, 50.0f); // cannot be 0
  
    ImGui::Text("Jello");
    // store and submit on reset 
@@ -588,14 +585,13 @@ void idle()
        myPlate->setPosition(glm::vec3(currentW.x, 0.0f, 0.0f), fTimeStep);
    }
 
-   if (needReset) {
+   // reset button pressed or if values changed and needs to be resetted
+   if (needReset || myCube->resolution != cubeResolution || myCube->structuralSpring != cubeStructuralSpring ||
+       myCube->shearSpring != cubeShearSpring || myCube->bendSpring != cubeBendSpring || myCube->fixedFloor != cubeFixedFloor) {
        // reset simulation
        std::cout << "RESETTING" << std::endl;
 
        // send cube values
-       myCube->stiffness = (-1.0) * double(fStiffness); // negate
-       myCube->damping = (-1.0) * double(fDamping); // negate
-       myCube->mass = double(fMass);
        myCube->resolution = cubeResolution;
        myCube->structuralSpring = cubeStructuralSpring;
        myCube->shearSpring = cubeShearSpring;

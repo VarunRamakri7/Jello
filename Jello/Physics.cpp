@@ -135,7 +135,7 @@ void processCollisionResponse(Cube* const cube, std::vector<collisionPoint>& col
 
         // F = ma -> a = F / m 
         // update force on current mass point that collided
-        s.mp->addAcceleration((springForce + dampingForce) / cube->mass);
+        s.mp->addAcceleration((springForce + dampingForce) / double(cube->mass));
     }
 }
 
@@ -191,7 +191,7 @@ void computeAcceleration(Cube* cube, double timeStep) {
 
         // external forces
         // TODO  division is expensive? 
-        glm::dvec3 externalAcc = (*currentPoint->getExternalForce()) / cube->mass;
+        glm::dvec3 externalAcc = (*currentPoint->getExternalForce()) / double(cube->mass);
         currentPoint->addAcceleration(externalAcc);
     }
 
@@ -223,7 +223,8 @@ glm::dvec3 calculateSpringForce(const double& kh, const glm::dvec3& pointA, cons
     double currentLength = glm::length(L);
     //double restLength = glm::length(*(pointA->getInitialPosition()) - *(pointB->getInitialPosition()));
 
-    return kh * (currentLength - restLength) * (L / currentLength);
+    // stiffness (kh) is a negative force
+    return (-1.0) * kh * (currentLength - restLength) * (L / currentLength);
 }
 
 
@@ -243,7 +244,8 @@ glm::dvec3 calculateDampingForce(const double& kd, const glm::dvec3& pointA, con
     double lengthL = glm::length(L); // current distance between pointA and pointB
     glm::dvec3 velocityDiff = velA - velB;
 
-    return kd * (glm::dot(velocityDiff, L) / lengthL) * (L / lengthL);
+    // damping value (kh) is a negative force
+    return (-1.0) * kd * (glm::dot(velocityDiff, L) / lengthL) * (L / lengthL);
 }
 
 // INTEGRATORS - numerical solution to analytical problems
