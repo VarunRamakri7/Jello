@@ -19,10 +19,6 @@ Cube::Cube() {
     initArrays();
 }
 
-glm::mat4 Cube::getModelMatrix() {
-    return this->modelMatrix;
-}
-
 void Cube::reset() {
     setSpringMode(this->structuralSpring, this->shearSpring, this->bendSpring);
 }
@@ -302,7 +298,9 @@ void Cube::addTriangle(glm::dvec3* posA, glm::dvec3* posB, glm::dvec3* posC) {
 
 // drawType : 0 = points, 1 = triangles 
 void Cube::render(GLuint modelParameter, bool showDiscrete, bool showSpring, bool debugMode) {
-    
+
+    glUniformMatrix4fv(modelParameter, 1, false, glm::value_ptr(this->modelMatrix));
+
     glBindVertexArray(VAO);
 
     if (debugMode) {

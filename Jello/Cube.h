@@ -30,7 +30,6 @@ class Cube {
         void reset();
 
         // render
-        glm::mat4 getModelMatrix();
         void render(GLuint modelParameter, bool showDiscrete, bool showSpring, bool debugMode);
         int pointSize = 5;
         
@@ -62,7 +61,7 @@ class Cube {
         void resetAcceleration();
         void setExternalForce(glm::vec3 force);
 
-    //private:
+    private:
         // render
         GLuint VBO, VAO, texVBO, normalVBO; // position, texture, normal
         glm::mat4 modelMatrix = glm::mat4(1.0f);

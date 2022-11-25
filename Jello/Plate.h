@@ -7,17 +7,15 @@
 class Plate {
 public:
     // square plate
-    Plate(glm::vec3 center, double size);
-    void render(GLuint modelParameter); // TODO add view mode 
+    Plate(glm::vec3 center, double size, GLuint debugShader);
+    void render(GLuint modelParameter);
 
     double size = 1;
     Plane* platePlane;
-    glm::vec3 position;
     std::vector <MassPoint*> constraintPoints{};
 
-    void offsetPosition(glm::dvec3 offset, double timeStep);
     void setConstraintPoints(std::vector <MassPoint*> points);
-    void setPosition(glm::vec3 position);
+    void setPosition(glm::vec3 position, double timeStep);
 };
 
 #endif

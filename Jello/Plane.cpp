@@ -17,13 +17,13 @@ Plane::Plane(glm::vec3 pointA, glm::vec3 pointB, glm::vec3 pointC, glm::vec3 poi
 }
 
 void Plane::render(GLuint modelParameter) {
+
+    glUniformMatrix4fv(modelParameter, 1, false, glm::value_ptr(this->modelMatrix));
+
     glBindVertexArray(this->VAO);
     glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
     glEnableVertexAttribArray(debugPosLoc);
 
-    //glPointSize(5);
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    //glDrawArrays(GL_POINTS, 0, dataSize/3);
     glDrawArrays(GL_LINES, 0, dataSize / 3);
 
     // unbind
@@ -31,8 +31,13 @@ void Plane::render(GLuint modelParameter) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 };
 
-glm::mat4 Plane::getModelMatrix() {
-    return this->modelMatrix;
+void Plane::setPosition(glm::vec3 pos) {
+    this->position = pos;
+    this->modelMatrix = glm::translate(glm::mat4(1.0), this->position);
+}
+
+glm::vec3 Plane::getPosition() {
+    return this->position;
 }
 
 void Plane::initArrays() {

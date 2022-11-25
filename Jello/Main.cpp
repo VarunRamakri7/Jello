@@ -24,10 +24,10 @@
 #include "BoundingBox.h"
 #include "Physics.h"
 #include "Plate.h"
+#include "Cube.h"
 
 #include <glm/gtx/string_cast.hpp> // for debug
 
-#include "Cube.h"
 
 const char* const window_title = "Jello";
 
@@ -442,29 +442,20 @@ void DrawHackScene(){
 /// </summary>
 void DrawScene()
 {
-    // draw bounding box
-    //if (showBB) {
-    //    boundingBox->render(1);
-    //}
 
-    //// draw plate
-    //if (myCube->fixedFloor) {
-    //    // show plate
-    //    myPlate->render(1);
-    //}
-    glUseProgram(shader_program);
-    glViewport(0, 0, CameraData.screen.x, CameraData.screen.y); // Change viewport size
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear FBO texture
 
-    const glm::mat4 M = myCube->getModelMatrix();
     const glm::mat4 V = glm::lookAt(glm::vec3(CameraData.eye), glm::vec3(0.0f), glm::vec3(CameraData.up));
     const glm::mat4 P = glm::perspective(glm::pi<float>() / 4.0f, float(CameraData.resolution.x) / float(CameraData.resolution.y), cameraNear, cameraFar);
     const glm::mat4 PV = P * V * trackball.Get3DViewCameraMatrix();
 
-    // Get location for shader uniform variable
+    glUseProgram(shader_program);
+    glViewport(0, 0, CameraData.screen.x, CameraData.screen.y); // Change viewport size
+
+    // Get location for shader uniform variable :: for cube 
     glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
-    glUniformMatrix4fv(UniformLocs::M, 1, false, glm::value_ptr(M));
     glUniformMatrix4fv(UniformLocs::V, 1, false, glm::value_ptr(V));
+    // cube passes its own M matrix
 
     // for debugging
     /*glUniform1i(UniformLocs::pass, FRONT_FACES);
@@ -486,11 +477,11 @@ void DrawScene()
 
     // Pass 1: Draw cube back faces and store eye-space depth
     glUniform1i(UniformLocs::pass, BACK_FACES);
-    myCube->render(1, showDiscrete, showSpring, debugMode);
+    myCube->render(UniformLocs::M, showDiscrete, showSpring, debugMode);
 
     // Pass 2: Draw cube front faces
     glUniform1i(UniformLocs::pass, FRONT_FACES);
-    myCube->render(1, showDiscrete, showSpring, debugMode);
+    myCube->render(UniformLocs::M, showDiscrete, showSpring, debugMode);
 
     // Render textured quad to back buffer
     glUniform1i(UniformLocs::pass, QUAD);
@@ -508,8 +499,16 @@ void DrawScene()
     glBindVertexArray(attribless_vao);
     glViewport(0, 0, CameraData.screen.x, CameraData.screen.y);
     draw_attribless_quad();
-
     //glEnable(GL_DEPTH_TEST);
+
+    glUseProgram(debug_shader_program);
+    glViewport(0, 0, CameraData.resolution.x, CameraData.resolution.y);
+    // draw plate
+    if (myCube->fixedFloor) {
+        // show plate
+        glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
+        myPlate->render(UniformLocs::M);
+    }
 
     if (debugMode) {
 
@@ -517,19 +516,19 @@ void DrawScene()
         // draw onto viewport's regular size (window size) 
         // actually should draw to max size
 
+        glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
+
         glViewport(0, 0, CameraData.resolution.x, CameraData.resolution.y);
         /*int PVM_loc = glGetUniformLocation(debug_shader_program, "PVM");
         glUniformMatrix4fv(PVM_loc, 1, false, glm::value_ptr(PVM));*/
 
         // draw points on top 
-        glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
-        glUniformMatrix4fv(UniformLocs::M, 1, false, glm::value_ptr(M));
-        myCube->render(1, showDiscrete, showSpring, debugMode);
+        myCube->render(UniformLocs::M, showDiscrete, showSpring, debugMode);
         // make render debug with options for points and spring as another option 
 
         // draw bounding box
         //if (showBB) {
-            boundingBox->render(1);
+        boundingBox->render(UniformLocs::M);
         //}
 
         //// draw plate
@@ -589,7 +588,7 @@ void idle()
        clamp(0, int(CameraData.resolution.x), mouseX);
        glm::vec4 currentW;
        getWorld(glm::vec2(mouseX, mouseY), currentW);
-       myPlate->setPosition(glm::vec3(currentW.x, 0.0f, 0.0f));
+       myPlate->setPosition(glm::vec3(currentW.x, 0.0f, 0.0f), fTimeStep);
    }
 
    if (needReset) {
@@ -606,7 +605,7 @@ void idle()
        myCube->bendSpring = cubeBendSpring;
        myCube->fixedFloor = cubeFixedFloor;
        myCube->reset();
-       myPlate->setPosition(initPlatePos);
+       myPlate->setPosition(initPlatePos, fTimeStep);
        // need to reconstrain since new masspoints are created
        // TODO can we just reset mass point locs? 
        if (myCube->fixedFloor) {
@@ -804,7 +803,7 @@ void buildScene() {
     myCube = new Cube(2, shader_program, debug_shader_program); // initial cube resolution = 2 
     myCube->setSpringMode(true, true, true);
     boundingBox = new BoundingBox(6.0f, 6.0f, 6.0f, glm::vec3(-3.0f, 5.5f, 3.0f), debug_shader_program);
-    myPlate = new Plate(initPlatePos, 2.0);
+    myPlate = new Plate(initPlatePos, 2.0, debug_shader_program);
     if (myCube->fixedFloor) {
         myPlate->setConstraintPoints(myCube->bottomFace);
     }

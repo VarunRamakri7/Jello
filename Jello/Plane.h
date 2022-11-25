@@ -16,14 +16,15 @@ class Plane {
         Plane(glm::vec3 pointA, glm::vec3 pointB, glm::vec3 pointC, glm::vec3 pointD, GLuint debugShader);
         
         // render
-        void render(GLuint modelParameter); 
-        glm::mat4 getModelMatrix();
+        void render(GLuint modelParameter);
         glm::dvec3 normal;
 
         // physics
         glm::dvec3 pointInPlane;
+        void setPosition(glm::vec3 pos);
+        glm::vec3 getPosition();
 
-    //private:
+    private:
         glm::vec3 pointA; // top left
         glm::vec3 pointB; // top right
         glm::vec3 pointC; // bottom left
