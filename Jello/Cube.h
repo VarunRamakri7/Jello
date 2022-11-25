@@ -23,7 +23,7 @@ class Cube {
     public:
 
         Cube(); // default constructor
-        Cube(int resolution);
+        Cube(int resolution, GLint shader, GLint debug);
         
         // setup
         void setSpringMode(bool structural, bool shear, bool bend);
@@ -31,9 +31,8 @@ class Cube {
 
         // render
         glm::mat4 getModelMatrix();
-        void render(GLuint modelParameter, bool showDiscrete, int drawType);
+        void render(GLuint modelParameter, bool showDiscrete, bool showSpring, bool debugMode);
         int pointSize = 5;
-        bool showSpring = false;
         
         // physics 
         double stiffness = -50;
@@ -90,6 +89,11 @@ class Cube {
         const int texCoordLoc = 1;
         const int normalLoc = 2;
 
+        // attribute locations for debug shaders
+        const int debugPosLoc = 0;
+
+        GLint shaderProgram;
+        GLint debugShaderProgram;
 };
 
 

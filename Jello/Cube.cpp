@@ -3,9 +3,12 @@
 
 #include <iostream>
 
-Cube::Cube(int resolution) {
+Cube::Cube(int resolution, GLint shader, GLint debug) {
     this->resolution = resolution;
     this->modelMatrix = glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(this->scale)), this->position);
+
+    this->shaderProgram = shader;
+    this->debugShaderProgram = debug;
 
     initArrays();
 }
@@ -210,6 +213,7 @@ void Cube::fillDiscretePoints(bool structural, bool shear, bool bend) {
                 if (bend) {
                     // Every node connected to its second neighbor in every direction
                     // (6 connections per node, unless surface node)
+                    // only adding the positive ones to itself
 
                     addConnection(massPointMap, point, i + 2, j, k);
                     addConnection(massPointMap, point, i, j + 2, k);
@@ -297,9 +301,11 @@ void Cube::addTriangle(glm::dvec3* posA, glm::dvec3* posB, glm::dvec3* posC) {
 }
 
 // drawType : 0 = points, 1 = triangles 
-void Cube::render(GLuint modelParameter, bool showDiscrete, int drawType) {
+void Cube::render(GLuint modelParameter, bool showDiscrete, bool showSpring, bool debugMode) {
+    
+    glBindVertexArray(VAO);
 
-    if (drawType == drawType::DRAWPOINT) {
+    if (debugMode) {
         // only draw points, including showing discrete points 
 
         for (int i = 0; i < this->discretePoints.size(); i++) {
@@ -324,15 +330,69 @@ void Cube::render(GLuint modelParameter, bool showDiscrete, int drawType) {
         }
 
         // send data to GPU 
-        glBindVertexArray(VAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glEnableVertexAttribArray(posLoc);
+        glEnableVertexAttribArray(debugPosLoc);
         glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(GLfloat), data.data(), GL_DYNAMIC_DRAW);
         // draw points
         glPointSize(this->pointSize);
-        glDrawArrays(GL_POINTS, 0, dataSize / 3); 
+        glDrawArrays(GL_POINTS, 0, dataSize/3); 
+
+        this->data.clear();
+
+        if (showSpring) {
+            // show springs
+            for (int i = 0; i < this->discretePoints.size(); i++) {
+                MassPoint* massPoint = discretePoints[i];
+                const glm::dvec3* pos = massPoint->getPosition();
+                const int cc = massPoint->getConnectionCount();
+
+                if (showDiscrete) {
+                    for (int c = 0; c < cc; c++) {
+                        MassPoint* connection = massPoint->getConnection(c);
+
+                        this->data.push_back(pos->x);
+                        this->data.push_back(pos->y);
+                        this->data.push_back(pos->z);
+
+                        const glm::dvec3* cpos = connection->getPosition();
+
+                        this->data.push_back(cpos->x);
+                        this->data.push_back(cpos->y);
+                        this->data.push_back(cpos->z);
+                    }
+                }
+                else {
+                    // only show surface connection with surface
+                    if (massPoint->isSurfacePoint()) {
+                        for (int c = 0; c < cc; c++) {
+                            MassPoint* connection = massPoint->getConnection(c);
+
+                            if (connection->isSurfacePoint()) {
+
+                                this->data.push_back(pos->x);
+                                this->data.push_back(pos->y);
+                                this->data.push_back(pos->z);
+
+                                const glm::dvec3* cpos = connection->getPosition();
+
+                                this->data.push_back(cpos->x);
+                                this->data.push_back(cpos->y);
+                                this->data.push_back(cpos->z);
+                            }
+                        }
+                    }
+                }
+            }
+
+            dataSize = int(data.size());
+            glBufferData(GL_ARRAY_BUFFER, dataSize * sizeof(GLfloat), this->data.data(), GL_DYNAMIC_DRAW);
+            glPointSize(this->pointSize);
+            glDrawArrays(GL_LINES, 0, dataSize / 3);
+
+            this->data.clear();
+        }
     }
-    else if (drawType == drawType::DRAWTRI) {
+    else {
         // draw only surface (triangle faces)
 
         for (int i = 0; i < frontFaces.size(); i++) {
@@ -415,7 +475,6 @@ void Cube::render(GLuint modelParameter, bool showDiscrete, int drawType) {
             }
         }
 
-        glBindVertexArray(VAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glEnableVertexAttribArray(posLoc);
         dataSize = this->data.size();
@@ -431,78 +490,24 @@ void Cube::render(GLuint modelParameter, bool showDiscrete, int drawType) {
         glBufferData(GL_ARRAY_BUFFER, this->normalData.size() * sizeof(GLfloat), this->normalData.data(), GL_DYNAMIC_DRAW);
 
         glDrawArrays(GL_TRIANGLES, 0, dataSize / 3); // drawing dataSize / 3 triangles (3 points form a triangle)
-    }
-
-    this->data.clear();
-    this->texData.clear();
-    this->normalData.clear();
-
-    if (showSpring) {
-        // show springs
-        for (int i = 0; i < this->discretePoints.size(); i++) {
-            MassPoint* massPoint = discretePoints[i];
-            const glm::dvec3* pos = massPoint->getPosition();
-
-            if (showDiscrete) {
-
-                const int cc = massPoint->getConnectionCount();
-                for (int c = 0; c < cc; c++) {
-                    MassPoint* connection = massPoint->getConnection(c);
-
-                    this->data.push_back(pos->x);
-                    this->data.push_back(pos->y);
-                    this->data.push_back(pos->z);
-
-                    const glm::dvec3* cpos = connection->getPosition();
-
-                    this->data.push_back(cpos->x);
-                    this->data.push_back(cpos->y);
-                    this->data.push_back(cpos->z);
-                }
-            }
-            else {
-                // only show surface
-                if (massPoint->isSurfacePoint()) {
-
-                    const int cc = massPoint->getConnectionCount();
-                    for (int c = 0; c < cc; c++) {
-                        MassPoint* connection = massPoint->getConnection(c);
-
-                        if (connection->isSurfacePoint()) {
-
-                            this->data.push_back(pos->x);
-                            this->data.push_back(pos->y);
-                            this->data.push_back(pos->z);
-
-                            const glm::dvec3* cpos = connection->getPosition();
-
-                            this->data.push_back(cpos->x);
-                            this->data.push_back(cpos->y);
-                            this->data.push_back(cpos->z);
-                        }
-                    }
-                }
-            }
-        }
-
-        dataSize = int(data.size());
-        glBufferData(GL_ARRAY_BUFFER, dataSize * sizeof(GLfloat), this->data.data(), GL_DYNAMIC_DRAW);
-        glPointSize(this->pointSize);
-        glDrawArrays(GL_LINES, 0, dataSize / 3); 
 
         this->data.clear();
+        this->texData.clear();
+        this->normalData.clear();
     }
+
+    // unbind
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void Cube::initArrays() {
     // init buffers
-    GLint program = -1;
-    glGetIntegerv(GL_CURRENT_PROGRAM, &program);
 
     // attribute locations
-    glBindAttribLocation(program, posLoc, "pos_attrib");
-    glBindAttribLocation(program, texCoordLoc, "tex_coord_attrib");
-    glBindAttribLocation(program, normalLoc, "normal_attrib");
+    glBindAttribLocation(shaderProgram, posLoc, "pos_attrib");
+    glBindAttribLocation(shaderProgram, texCoordLoc, "tex_coord_attrib");
+    glBindAttribLocation(shaderProgram, normalLoc, "normal_attrib");
 
     // VAO
     glGenVertexArrays(1, &VAO);
@@ -513,7 +518,7 @@ void Cube::initArrays() {
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glEnableVertexAttribArray(posLoc);
     glVertexAttribPointer(posLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    
+
     //dataSize = int(this->discretePoints.size());
     // send to GPU
     //glBufferData(GL_ARRAY_BUFFER, dataSize * sizeof(GLfloat), this->discretePoints.data(), GL_DYNAMIC_DRAW);
@@ -530,6 +535,12 @@ void Cube::initArrays() {
     glBindBuffer(GL_ARRAY_BUFFER, normalVBO);
     glEnableVertexAttribArray(normalLoc);
     glVertexAttribPointer(normalLoc, 3, GL_FLOAT, 0, 0, 0);
+
+    // debug shader 
+    glBindAttribLocation(debugShaderProgram, debugPosLoc, "pos_attrib");
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glEnableVertexAttribArray(debugPosLoc);
+    glVertexAttribPointer(debugPosLoc, 3, GL_FLOAT, 0, 0, 0);
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);

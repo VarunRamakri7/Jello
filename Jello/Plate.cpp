@@ -8,7 +8,7 @@ Plate::Plate(glm::vec3 center, double size) {
     glm::vec3 pointB = center + glm::vec3(half, 0, -half); // top right
     glm::vec3 pointC = center + glm::vec3(-half, 0, half); // bottom left
     glm::vec3 pointD = center + glm::vec3(half, 0, half); // bottom right
-    platePlane = new Plane(pointA, pointB, pointC, pointD);
+    platePlane = new Plane(pointA, pointB, pointC, pointD, 0);
     this->position = center;
 }
 

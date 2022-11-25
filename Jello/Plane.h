@@ -13,7 +13,7 @@
 
 class Plane {
     public:
-        Plane(glm::vec3 pointA, glm::vec3 pointB, glm::vec3 pointC, glm::vec3 pointD);
+        Plane(glm::vec3 pointA, glm::vec3 pointB, glm::vec3 pointC, glm::vec3 pointD, GLuint debugShader);
         
         // render
         void render(GLuint modelParameter); 
@@ -33,8 +33,10 @@ class Plane {
 
         GLuint VBO, VAO;
         std::vector <GLfloat> data{};
+        int debugPosLoc = 0;
         int dataSize = 0;
         glm::mat4 modelMatrix = glm::mat4(1.0f);
+        GLuint debugShader;
 
         void initArrays();
 

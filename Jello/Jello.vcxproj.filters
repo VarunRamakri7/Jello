@@ -148,9 +148,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="template_fs.glsl">
-      <Filter>shaders</Filter>
-    </None>
     <None Include="template_vs.glsl">
       <Filter>shaders</Filter>
     </None>
@@ -158,6 +155,9 @@
       <Filter>shaders</Filter>
     </None>
     <None Include="debug_vs.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="debug_fs.glsl">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>

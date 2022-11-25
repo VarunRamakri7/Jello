@@ -14,7 +14,7 @@
 
 class BoundingBox {
     public:
-        BoundingBox(int width, int height, int depth, glm::vec3 topFrontLeft);
+        BoundingBox(int width, int height, int depth, glm::vec3 topFrontLeft, GLuint debugShader);
         void render(GLuint modelParameter); // TODO add view mode 
 
         // TODO make all use glfloat

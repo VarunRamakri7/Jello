@@ -3,7 +3,7 @@
 #include <iostream>
 
 // width is front, depth is z 
-BoundingBox::BoundingBox(int width, int height, int depth, glm::vec3 topFrontLeft) {
+BoundingBox::BoundingBox(int width, int height, int depth, glm::vec3 topFrontLeft, GLuint debugShader) {
 
     glm::vec3 p1 = topFrontLeft;
     glm::vec3 p2 = p1; //topFrontRight
@@ -24,17 +24,17 @@ BoundingBox::BoundingBox(int width, int height, int depth, glm::vec3 topFrontLef
     // normals need to face inwards (because we are inside the box
     // TODO calculate the normal from camera position // inside outside the box // or objects normal cos we want to collide from both sides
     // front plane 
-    Plane* front = new Plane(p2, p1, p4, p3);//Plane(p1, p2, p3, p4);
+    Plane* front = new Plane(p2, p1, p4, p3, debugShader);//Plane(p1, p2, p3, p4);
     // right plane
-    Plane* right = new Plane(p6, p2, p8, p4);//Plane(p6, p1, p8, p4);
+    Plane* right = new Plane(p6, p2, p8, p4, debugShader);//Plane(p6, p1, p8, p4);
     // left plane
-    Plane* left = new Plane(p1, p5, p3, p7);//Plane(p1, p5, p3, p7);
+    Plane* left = new Plane(p1, p5, p3, p7, debugShader);//Plane(p1, p5, p3, p7);
     // back plane
-    Plane* back = new Plane(p5, p6, p7, p8);
+    Plane* back = new Plane(p5, p6, p7, p8, debugShader);
     // bottom plane
-    Plane* bottom = new Plane(p7, p8, p3, p4);
+    Plane* bottom = new Plane(p7, p8, p3, p4, debugShader);
     // top plane
-    Plane* top = new Plane(p1, p2, p5, p6);
+    Plane* top = new Plane(p1, p2, p5, p6, debugShader);
 
     planes.push_back(front);
     planes.push_back(right);
