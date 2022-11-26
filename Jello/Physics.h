@@ -19,11 +19,6 @@
 // global variable
 extern BoundingBox* boundingBox;
 
-struct collisionPoint {
-    MassPoint* mp;
-    glm::dvec3 closestPoint;
-};
-
 // jelly simulation
 glm::dvec3 calculateSpringForce(const double& kh, const glm::dvec3& pointA, const glm::dvec3& pointB, const double restLength);
 glm::dvec3 calculateSpringForce(const double& const kh, MassPoint* const pointA, MassPoint* const pointB);
@@ -41,9 +36,8 @@ void integrateRK4(Cube* cube, double timeStep);
 
 // collision
 bool isPointInNegativeSide(const glm::dvec3& point, const Plane& plane);
-bool checkCollision(MassPoint* massPoint, BoundingBox* const bbox, std::vector<collisionPoint>& collisionPoints);
-bool checkCollision(MassPoint* massPoint, Plane* const plane, std::vector<collisionPoint>& collisionPoints);
-void processCollisionResponse(Cube* const cube, std::vector<collisionPoint>& collisionPoints);
+bool checkCollision(MassPoint* massPoint, BoundingBox* const bbox, glm::dvec3& closesPoint);
+void processCollisionResponse(Cube* const cube, MassPoint* const massPoint, const glm::dvec3& closestPoint);
 bool isPointInBox(glm::dvec3* const point, BoundingBox* const bbox);
 
 #endif

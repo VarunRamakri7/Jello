@@ -34,69 +34,39 @@ glm::dvec3 computeClosestPoint(const glm::dvec3& point, Plane plane)
     return plane.normal * (-t) + point;
 }
 
-bool checkCollision(MassPoint* massPoint, BoundingBox* const bbox, std::vector<collisionPoint> &collisionPoints) {
+bool checkCollision(MassPoint* massPoint, BoundingBox* const bbox, glm::dvec3& closesPoint) {
     // for mass points in cube, check if in boundingbox
     // if not inside, check if colliding 
+    // only gives one collision point per point, 
+    // if point hits two planes at once (ie: corner) it'll process one at a time
 
     glm::dvec3* const pos = massPoint->getPosition(); // already world space
 
     if (!isPointInBox(pos, bbox)) {
         // collide 
-        // each plane in box, check for collision
+        // check for collision with each plane in box
         for (int p = 0; p < 6; p++) {
             if (isPointInNegativeSide(*pos, *bbox->planes[p])) {
                 // find intersection point in plane 
                 // store mass point, closest point of collision, list of collision springs to process 
-                struct collisionPoint cp;
-                cp.closestPoint = computeClosestPoint(*pos, *bbox->planes[p]);
-                cp.mp = massPoint;
-                collisionPoints.push_back(cp);
+                closesPoint = computeClosestPoint(*pos, *bbox->planes[p]);
+                return true;
             }
         }
     }
-    
-    return collisionPoints.size() != 0;
+
+    return false;
 }
 
+void processCollisionResponse(Cube* const cube, MassPoint* const massPoint, const glm::dvec3& closestPoint) {
+    // compute elastic force and damping
+    glm::dvec3 springForce = calculateSpringForce(cube->stiffness, *(massPoint->getPosition()), closestPoint, 0.0);
+    glm::dvec3 dampingForce = calculateDampingForce(cube->damping * 50.0, *(massPoint->getPosition()), closestPoint, *(massPoint->getVelocity()), glm::dvec3(0.0));
 
-// check collision with plane
-bool checkCollision(MassPoint* massPoint, Plane* const plane, std::vector<collisionPoint>& collisionPoints) {
-    // for mass points in cube, check if in boundingbox
-    // if not inside, check if colliding 
-
-    glm::dvec3* const pos = massPoint->getPosition(); 
-
-    if (isPointInNegativeSide(*pos, *plane)) {
-        // find intersection point in plane 
-        // store mass point, closest point of collision, list of collision springs to process 
-        struct collisionPoint cp;
-        cp.closestPoint = computeClosestPoint(*pos, *plane);
-        cp.mp = massPoint;
-        collisionPoints.push_back(cp);
-    }
-
-    return collisionPoints.size() != 0;
+    // F = ma -> a = F / m 
+    // update force on current mass point that collided
+    massPoint->addAcceleration((springForce + dampingForce) / double(cube->mass));
 }
-
-void processCollisionResponse(Cube* const cube, std::vector<collisionPoint>& collisionPoints) {
-    if (collisionPoints.size() == 0) // no collision
-        return;
-
-    // create a spring for each collision
-
-    // compute acceleration for each collision
-    for (const auto& s : collisionPoints)
-    {
-        // compute elastic force and damping
-        glm::dvec3 springForce = calculateSpringForce(cube->stiffness , *(s.mp->getPosition()), s.closestPoint, 0.0);
-        glm::dvec3 dampingForce = calculateDampingForce(cube->damping * 50.0, *(s.mp->getPosition()), s.closestPoint, *(s.mp->getVelocity()), glm::dvec3(0.0));
-
-        // F = ma -> a = F / m 
-        // update force on current mass point that collided
-        s.mp->addAcceleration((springForce + dampingForce) / double(cube->mass));
-    }
-}
-
 
 // PHYSICS
 
@@ -132,27 +102,26 @@ void computeAcceleration(Cube* cube, double timeStep) {
     // reset accumulated acceleration to 0
     cube->resetAcceleration();
 
-    std::vector<collisionPoint> collisionPoints;
-
     // goes through all masspoints
-    #pragma omp parallel for
+    #pragma omp parallel for shared(boundingBox)
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
 
         // calculate spring acceleration for each mass points
         computeSpringAcceleration(cube->stiffness, cube->damping, cube->mass, currentPoint);
 
-        // check if each point collides with any objects in the scene
-        checkCollision(currentPoint, boundingBox, collisionPoints);
+        // check if each point collides with bounding box
+        glm::dvec3 closestPoint;
+        if (checkCollision(currentPoint, boundingBox, closestPoint)) {
+            // if collided, process collision response 
+            processCollisionResponse(cube, currentPoint, closestPoint);
+        }
 
         // external forces
         // TODO  division is expensive? 
         glm::dvec3 externalAcc = (*currentPoint->getExternalForce()) / double(cube->mass);
         currentPoint->addAcceleration(externalAcc);
     }
-
-    // compute force from collision as response
-    processCollisionResponse(cube, collisionPoints);
 }
 
 /**
