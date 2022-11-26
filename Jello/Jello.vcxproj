@@ -200,7 +200,7 @@
     <None Include="debug_vs.glsl" />
     <None Include="jello_fs.glsl" />
     <None Include="debug_fs.glsl" />
-    <None Include="template_vs.glsl" />
+    <None Include="jello_vs.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

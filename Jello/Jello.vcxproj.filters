@@ -136,9 +136,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="template_vs.glsl">
-      <Filter>shaders</Filter>
-    </None>
     <None Include="jello_fs.glsl">
       <Filter>shaders</Filter>
     </None>
@@ -146,6 +143,9 @@
       <Filter>shaders</Filter>
     </None>
     <None Include="debug_fs.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="jello_vs.glsl">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>

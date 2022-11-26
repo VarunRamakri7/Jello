@@ -479,6 +479,15 @@ void DrawScene()
     glBindVertexArray(bg_vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
+    // draw plate with debug line shader
+    if (myCube->fixedFloor) {
+        // show plate
+        glUseProgram(debug_shader_program);
+        glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
+        myPlate->render(UniformLocs::M);
+    }
+
+    glUseProgram(shader_program);
     // Pass 1: Draw cube back faces and store eye-space depth
     glUniform1i(UniformLocs::pass, BACK_FACES);
     myCube->render(UniformLocs::M, showDiscrete, showSpring, debugMode);
@@ -503,15 +512,6 @@ void DrawScene()
     glBindVertexArray(attribless_vao);
     glViewport(0, 0, CameraData.screen.x, CameraData.screen.y);
     draw_attribless_quad();
-
-    // draw plate with debug line shader
-    if (myCube->fixedFloor) {
-        // show plate
-        glUseProgram(debug_shader_program);
-        glViewport(0, 0, CameraData.resolution.x, CameraData.resolution.y);
-        glUniformMatrix4fv(UniformLocs::PV, 1, false, glm::value_ptr(PV));
-        myPlate->render(UniformLocs::M);
-    }
 
     if (debugMode) {
 
