@@ -30,7 +30,7 @@
 
 const char* const window_title = "Jello";
 
-static const std::string vertex_shader("template_vs.glsl");
+static const std::string vertex_shader("jello_vs.glsl");
 static const std::string fragment_shader("jello_fs.glsl");
 static const std::string debug_vertex_shader("debug_vs.glsl");
 static const std::string debug_fragment_shader("debug_fs.glsl");
