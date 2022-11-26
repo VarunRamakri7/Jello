@@ -183,45 +183,51 @@ void clamp(float min, float max, float& value) {
  */
 void draw_gui(GLFWwindow* window)
 {
-   //Begin ImGui Frame
+   // Begin ImGui Frame
    ImGui_ImplOpenGL3_NewFrame();
    ImGui_ImplGlfw_NewFrame();
    ImGui::NewFrame();
 
-   //Draw Gui
-   ImGui::Begin("Debug window");                       
-   if (ImGui::Button("Quit"))                          
-   {
-      glfwSetWindowShouldClose(window, GLFW_TRUE);
-   }    
+   // Draw Gui
+   ImGui::Begin("Control Panel");
 
-   const int filename_len = 256;
-   static char video_filename[filename_len] = "capture.mp4";
+   // Instructions
+   ImGui::Separator();
+   ImGui::Text("Hold P + shake cursor to shake plate");
+   ImGui::Text("Hold C + left mouse to rotate camera");
+   ImGui::Text("Hold C + middle mouse to pan camera");
+   ImGui::Text("Hold C + right mouse to zoom");
 
-   ImGui::InputText("Video filename", video_filename, filename_len);
-   ImGui::SameLine();
-   if (recording == false)
-   {
-      if (ImGui::Button("Start Recording"))
-      {
-         int w, h;
-         glfwGetFramebufferSize(window, &w, &h);
-         recording = true;
-         start_encoding(video_filename, w, h); //Uses ffmpeg
-      }
-      
-   }
-   else
-   {
-      if (ImGui::Button("Stop Recording"))
-      {
-         recording = false;
-         finish_encoding(); //Uses ffmpeg
-      }
-   }
+   // Shading
+   ImGui::Separator();
+   ImGui::Text("SHADING");
+   ImGui::SliderFloat3("Light Position", &LightData.light_w.x, -10.0f, 10.0f);
+   ImGui::ColorEdit3("Base Color", &MaterialData.base_color.r, 0);
+   ImGui::ColorEdit4("Absorbption", &MaterialData.absorption.r, 0);
+   ImGui::ColorEdit3("Specular Color", &MaterialData.spec_color.r, 0);
+   ImGui::ColorEdit3("Background Color", &LightData.bg_color.r, 0);
+ 
+   // Jello
+   ImGui::Separator();
+   ImGui::Text("JELLO");
+   ImGui::SliderInt("Jello Resolution", &cubeResolution, 2, 8);
+   ImGui::Checkbox("On Plate", &cubeFixedFloor);
+   ImGui::Checkbox("Structural Spring", &cubeStructuralSpring);
+   ImGui::Checkbox("Shear Spring", &cubeShearSpring);
+   ImGui::Checkbox("Bend Spring", &cubeBendSpring);
+   ImGui::Checkbox("Add Gravity", &addGravity);
 
-   // display
-   ImGui::Text("Display");
+   // Physics
+   ImGui::Separator();
+   ImGui::Text("PHYSICS");
+   ImGui::SliderFloat("Stiffness", &myCube->stiffness, 0.0f, 100.0f);
+   ImGui::SliderFloat("Damping", &myCube->damping, 0.0, 1.0f);
+   ImGui::SliderFloat("Mass", &myCube->mass, 1.0f, 50.0f); // cannot be 0
+   needReset = ImGui::Button("Reset Simulation"); // reset simulation
+
+   // Display
+   ImGui::Separator();
+   ImGui::Text("DISPLAY");
    ImGui::Checkbox("Debug Mode", &debugMode);
    if (debugMode) {
        // show other debug options
@@ -230,41 +236,48 @@ void draw_gui(GLFWwindow* window)
        ImGui::SliderInt("Particle Size", &myCube->pointSize, 1, 10);
        ImGui::Checkbox("Visualize Springs", &showSpring);
    }
-
-   // physics
-   ImGui::Text("Physics");
-   ImGui::SliderFloat("Stiffness", &myCube->stiffness, 0.0f, 100.0f);
-   ImGui::SliderFloat("Damping", &myCube->damping, 0.0, 1.0f);
-   ImGui::SliderFloat("Mass", &myCube->mass, 1.0f, 50.0f); // cannot be 0
- 
-   // Jello
-   ImGui::Text("Jello");
-   ImGui::SliderInt("Jello Resolution", &cubeResolution, 2, 8);
-   ImGui::Checkbox("On Plate", &cubeFixedFloor);
-   ImGui::Checkbox("Structural Spring", &cubeStructuralSpring);
-   ImGui::Checkbox("Shear Spring", &cubeShearSpring);
-   ImGui::Checkbox("Bend Spring", &cubeBendSpring);
-   ImGui::Checkbox("Add Gravity", &addGravity);
-
-   // Reset buttons
-   needReset = ImGui::Button("Reset");
+   // Reset camera position
    needCamReset = ImGui::Button("Camera to Origin");
 
-   ImGui::Text("Integrators");
+   // integrators
+   ImGui::Separator();
+   ImGui::Text("INTEGRATORS");
    ImGui::RadioButton("Euler", &integrator, integratorEnum::EULER);
    ImGui::RadioButton("RK4", &integrator, integratorEnum::RK4);
    ImGui::SliderFloat("TimeStep", &fTimeStep, 0.001f, 0.01f);
 
-   ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-   ImGui::End();
+   ImGui::Separator();
+   if (ImGui::Button("Quit"))
+   {
+       glfwSetWindowShouldClose(window, GLFW_TRUE);
+   }
 
-   // Shading
-   ImGui::Begin("Shading");
-   ImGui::SliderFloat3("Light Position", &LightData.light_w.x, -10.0f, 10.0f);
-   ImGui::ColorEdit3("Base Color", &MaterialData.base_color.r, 0);
-   ImGui::ColorEdit4("Absorbption", &MaterialData.absorption.r, 0);
-   ImGui::ColorEdit3("Specular Color", &MaterialData.spec_color.r, 0);
-   ImGui::ColorEdit3("Background Color", &LightData.bg_color.r, 0);
+   const int filename_len = 256;
+   static char video_filename[filename_len] = "capture.mp4";
+
+   ImGui::InputText("Video filename", video_filename, filename_len);
+   ImGui::SameLine();
+   if (recording == false)
+   {
+       if (ImGui::Button("Start Recording"))
+       {
+           int w, h;
+           glfwGetFramebufferSize(window, &w, &h);
+           recording = true;
+           start_encoding(video_filename, w, h); //Uses ffmpeg
+       }
+
+   }
+   else
+   {
+       if (ImGui::Button("Stop Recording"))
+       {
+           recording = false;
+           finish_encoding(); //Uses ffmpeg
+       }
+   }
+
+   ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
    ImGui::End();
 
    /* for Debugging camera
