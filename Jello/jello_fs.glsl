@@ -8,8 +8,8 @@ layout(location = 3) uniform float time;
 layout(location = 4) uniform int pass;
 
 layout(std140, binding = 2) uniform LightUniforms {
-    vec4 light_w; // world-space light position
-    vec4 bg_color; // Background color
+	vec4 light_w; // world-space light position
+	vec4 bg_color; // Background color
 } Light;
 
 layout(std140, binding = 3) uniform MaterialUniforms {
@@ -19,9 +19,9 @@ layout(std140, binding = 3) uniform MaterialUniforms {
 } Material;
 
 layout(std140, binding = 4) uniform CameraUniforms {
-    vec4 eye;
-    vec4 up;
-    vec4 resolution;
+	vec4 eye;
+	vec4 up;
+	vec4 resolution;
 	ivec2 screen;
 } Camera;
 
@@ -49,94 +49,94 @@ const float n_obj = 1.125f;
 // From https://blog.demofox.org/2017/01/09/raytracing-reflection-refraction-fresnel-total-internal-reflection-and-beers-law/
 float FresnelReflectAmount (float n1, float n2, vec3 normal, vec3 incident)
 {
-        // Schlick aproximation
-        float r0 = (n1-n2) / (n1+n2);
-        r0 *= r0;
-        float cosX = -dot(normal, incident);
-        if (n1 > n2)
-        {
-            float n = n1/n2;
-            float sinT2 = n*n*(1.0-cosX*cosX);
-            // Total internal reflection
-            if (sinT2 > 1.0)
-                return 1.0;
-            cosX = sqrt(1.0-sinT2);
-        }
-        float x = 1.0-cosX;
-        float ret = r0+(1.0-r0)*x*x*x*x*x;
+		// Schlick aproximation
+		float r0 = (n1-n2) / (n1+n2);
+		r0 *= r0;
+		float cosX = -dot(normal, incident);
+		if (n1 > n2)
+		{
+			float n = n1/n2;
+			float sinT2 = n*n*(1.0-cosX*cosX);
+			// Total internal reflection
+			if (sinT2 > 1.0)
+				return 1.0;
+			cosX = sqrt(1.0-sinT2);
+		}
+		float x = 1.0-cosX;
+		float ret = r0+(1.0-r0)*x*x*x*x*x;
  
-        // adjust reflect multiplier for object reflectivity
-        ret = (reflectivity + (1.0-reflectivity) * ret);
-        return ret;
+		// adjust reflect multiplier for object reflectivity
+		ret = (reflectivity + (1.0-reflectivity) * ret);
+		return ret;
 }
 
 vec4 HackTransparency()
 {
-    vec3 reflect_dir = -reflect(inData.light_dir, inData.normal);
+	vec3 reflect_dir = -reflect(inData.light_dir, inData.normal);
 
-    float fresnel = FresnelReflectAmount(n_air, n_obj, inData.normal, inData.light_dir);
-    //fresnel -= 1.0f;
+	float fresnel = FresnelReflectAmount(n_air, n_obj, inData.normal, inData.light_dir);
+	//fresnel -= 1.0f;
 
-    float spec = max(dot(inData.eye_dir, reflect_dir), 0.0) * fresnel;
-    spec *= spec;
+	float spec = max(dot(inData.eye_dir, reflect_dir), 0.0) * fresnel;
+	spec *= spec;
 
-    return (Material.base_color + Material.spec_color * spec * Material.absorption.z) * Light.bg_color;
+	return (Material.base_color + Material.spec_color * spec * Material.absorption.z) * Light.bg_color;
 }
 
 void main(void)
 {
-    vec2 uv = vec2(gl_FragCoord.x / Camera.resolution.x, gl_FragCoord.y / Camera.resolution.y); // Get uv coordinate
+	vec2 uv = vec2(gl_FragCoord.x / Camera.resolution.x, gl_FragCoord.y / Camera.resolution.y); // Get uv coordinate
 
-    switch(pass)
-    {
-        case 0: // Render Background
-            fragcolor = Light.bg_color;
-            depthVal = inData.depth; // Store eye-space depth
-            break;
-        case 1: // Render mesh back faces and store eye-space depth
-            if(!gl_FrontFacing)
-            {
-                depthVal = normalize(inData.depth); // Store eye-space depth
+	switch(pass)
+	{
+		case 0: // Render Background
+			fragcolor = Light.bg_color;
+			depthVal = inData.depth; // Store eye-space depth
+			break;
+		case 1: // Render mesh back faces and store eye-space depth
+			if(!gl_FrontFacing)
+			{
+				depthVal = normalize(inData.depth); // Store eye-space depth
 
-                fragcolor = Material.base_color;
-            }
-            else
-            {
-                discard; // Discard front facing fragments
-            }
-            break;
-        case 2: // Render front faces, compute eye-space depth
-            if(gl_FrontFacing)
-            {
-                // Compute front face depth
+				fragcolor = Material.base_color;
+			}
+			else
+			{
+				discard; // Discard front facing fragments
+			}
+			break;
+		case 2: // Render front faces, compute eye-space depth
+			if(gl_FrontFacing)
+			{
+				// Compute front face depth
 
-                // Compute thickness
-                vec3 thickness = abs(normalize(inData.depth) - texture(depth_tex, inData.tex_coord)).xyz; // Compute thickness from front face depth and back face depth
+				// Compute thickness
+				vec3 thickness = abs(normalize(inData.depth) - texture(depth_tex, uv)).xyz; // Compute thickness from front face depth and back face depth
 
-                // Get refracted background color
-                //vec4 ref_bg_color = Light.bg_color * inverse(transpose(M));
+				// Get refracted background color
+				//vec4 ref_bg_color = Light.bg_color * inverse(transpose(M));
 
-                // Compute Beer's Law for final color
-                vec3 color = min(HackTransparency(), vec4(1.0)).xyz;
-                vec3 absorb = exp(-Material.absorption.xyz * thickness);
+				// Compute Beer's Law for final color
+				vec3 color = min(HackTransparency(), vec4(1.0)).xyz;
+				vec3 absorb = exp(-Material.absorption.xyz * thickness);
 
-                fragcolor = vec4(color * absorb, 1.0);
-                //fragcolor = vec4(inData.tex_coord, 0.0f, 1.0f);
-                //fragcolor = ref_bg_color;
-            }
-            else
-            {
-                discard; // Discard back facing fragments
-            }
-            break;
-        case 4: // Textured Quad
-                fragcolor = texture(fbo_tex, uv); // Display FBO texture
-                //fragcolor = texture(depth_tex, uv); // Display FBO texture
-            break;
-        default:
-            fragcolor = min(HackTransparency(), vec4(1.0));
-            break;
-    }
+				fragcolor = vec4(color * absorb, 1.0);
+				//fragcolor = vec4(inData.tex_coord, 0.0f, 1.0f);
+				//fragcolor = ref_bg_color;
+			}
+			else
+			{
+				discard; // Discard back facing fragments
+			}
+			break;
+		case 4: // Textured Quad
+				fragcolor = texture(fbo_tex, uv); // Display FBO texture
+				//fragcolor = texture(depth_tex, uv); // Display FBO texture
+			break;
+		default:
+			fragcolor = min(HackTransparency(), vec4(1.0));
+			break;
+	}
 
 	//fragcolor = vec4(inData.normal, 1.0f); // Color as normals
 }
