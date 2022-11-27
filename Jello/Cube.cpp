@@ -361,7 +361,7 @@ void Cube::render(GLuint modelParameter, bool showDiscrete, bool showSpring, boo
                         addTriangle(posA, posB, posC);
 
                         // triangle 2
-                        massPointA = (*face)[f+1];
+                        massPointA = (*face)[f + 1];
                         posA = massPointA->getPosition();
                         massPointB = (*face)[f + 1 + resolution];
                         posB = massPointB->getPosition();
