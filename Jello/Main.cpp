@@ -18,7 +18,6 @@
 #include <algorithm>
 
 #include "InitShader.h"    //Functions for loading shaders from text files
-#include "VideoMux.h"      //Functions for saving videos
 #include "trackball.h"
 #include "BoundingBox.h"
 #include "Physics.h"
@@ -145,8 +144,6 @@ bool showSpring = false;
 bool showBB = true; // show bounding box
 bool debugMode = false;
 
-bool recording = false;
-
 // PHYSICS
 glm::vec3 gravity = glm::vec3(0.0, -9.8, 0.0); // acceleration 
 bool addGravity = false;
@@ -220,8 +217,8 @@ void draw_gui(GLFWwindow* window)
    // Physics
    ImGui::Separator();
    ImGui::Text("PHYSICS");
-   ImGui::SliderFloat("Stiffness", &myCube->stiffness, 0.0f, 100.0f);
-   ImGui::SliderFloat("Damping", &myCube->damping, 0.0, 1.0f);
+   ImGui::SliderFloat("Stiffness", &myCube->stiffness, 0.0f, 2000.0f);
+   ImGui::SliderFloat("Damping", &myCube->damping, 0.0, 10.0f);
    ImGui::SliderFloat("Mass", &myCube->mass, 1.0f, 50.0f); // cannot be 0
    needReset = ImGui::Button("Reset Simulation"); // reset simulation
 
@@ -250,31 +247,6 @@ void draw_gui(GLFWwindow* window)
    if (ImGui::Button("Quit"))
    {
        glfwSetWindowShouldClose(window, GLFW_TRUE);
-   }
-
-   const int filename_len = 256;
-   static char video_filename[filename_len] = "capture.mp4";
-
-   ImGui::InputText("Video filename", video_filename, filename_len);
-   ImGui::SameLine();
-   if (recording == false)
-   {
-       if (ImGui::Button("Start Recording"))
-       {
-           int w, h;
-           glfwGetFramebufferSize(window, &w, &h);
-           recording = true;
-           start_encoding(video_filename, w, h); //Uses ffmpeg
-       }
-
-   }
-   else
-   {
-       if (ImGui::Button("Stop Recording"))
-       {
-           recording = false;
-           finish_encoding(); //Uses ffmpeg
-       }
    }
 
    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -550,16 +522,6 @@ void display(GLFWwindow* window)
 
     //DrawHackScene(); // Draw hack transparency scene
     DrawScene(); // Draw proper transparency scene
-
-    if (recording == true)
-    {
-        glFinish();
-        glReadBuffer(GL_BACK);
-        int w, h;
-        glfwGetFramebufferSize(window, &w, &h);
-        read_frame_to_encode(&rgb, &pixels, w, h);
-        encode_frame(rgb);
-    }
 
     draw_gui(window);
 

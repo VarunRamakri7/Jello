@@ -234,7 +234,6 @@ void integrateRK4(Cube* cube, double timeStep) {
     computeAcceleration(cube, timeStep);
 
     // integrate
-    #pragma omp parallel for
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
         MassPoint* bufferPoint = buffer.discretePoints[i];
@@ -265,7 +264,6 @@ void integrateRK4(Cube* cube, double timeStep) {
 
     computeAcceleration(&buffer, timeStep);
 
-    #pragma omp parallel for
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
         MassPoint* bufferPoint = buffer.discretePoints[i];
@@ -296,7 +294,6 @@ void integrateRK4(Cube* cube, double timeStep) {
 
     computeAcceleration(&buffer, timeStep);
 
-    #pragma omp parallel for
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
         MassPoint* bufferPoint = buffer.discretePoints[i];
@@ -327,7 +324,6 @@ void integrateRK4(Cube* cube, double timeStep) {
 
     computeAcceleration(&buffer, timeStep);
 
-    #pragma omp parallel for
     for (int i = 0; i < cube->discretePoints.size(); i++) {
         MassPoint* currentPoint = cube->discretePoints[i];
         MassPoint* bufferPoint = buffer.discretePoints[i];

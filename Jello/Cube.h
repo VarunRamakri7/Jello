@@ -31,7 +31,7 @@ class Cube {
         int pointSize = 5;
         
         // physics 
-        float stiffness = 50.0f; // store as positive and negate in function so it makes more sense in ImGui
+        float stiffness = 1500.0f; // store as positive and negate in function so it makes more sense in ImGui
         float damping = 0.5f; // store as positive and negate in function so it makes more sense in ImGui
         float mass = 1.0f;
 
