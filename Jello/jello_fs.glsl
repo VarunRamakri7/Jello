@@ -116,7 +116,7 @@ void main(void)
                 vec3 color = min(HackTransparency(), vec4(1.0)).xyz;
                 vec3 absorb = exp(-Material.absorption.xyz * thickness);
 
-                fragcolor = vec4(color * absorb, 1.0f) * Light.bg_color;
+                fragcolor = vec4(color * absorb, 1.0f) * Light.bg_color * texture(fbo_tex, inData.tex_coord);
                 //fragcolor = texture(fbo_tex, inData.tex_coord);
                 //fragcolor = vec4(inData.tex_coord, 0.0f, 1.0f);
                 //fragcolor = vec4(color, 1.0f);
