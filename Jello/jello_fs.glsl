@@ -38,12 +38,8 @@ in VertexData
 out layout(location = 0) vec4 fragcolor; //the output color for this fragment    
 out layout(location = 1) vec4 depthVal; // Write depth to Color attachment 1
 
-const float near = 0.1f;
-const float far = 100.0f;
-
-//const vec3 jello_absorb = vec3(0.8, 0.8, 0.1); // Amount of each color absorbed by the object
 const float reflectivity = 0.75f; // Reflectivity of object
-const float n_air = 1.0029f;
+const float n_air = 1.00029f;
 const float n_obj = 1.125f;
 
 // From https://blog.demofox.org/2017/01/09/raytracing-reflection-refraction-fresnel-total-internal-reflection-and-beers-law/
@@ -80,7 +76,7 @@ vec4 HackTransparency()
     float spec = max(dot(inData.eye_dir, reflect_dir), 0.0) * fresnel;
     spec *= spec;
 
-    return (Material.base_color + Material.spec_color * spec * Material.absorption.z) * Light.bg_color;
+    return Material.base_color + Material.spec_color * spec * Material.absorption.z;
 }
 
 void main(void)
@@ -120,9 +116,10 @@ void main(void)
                 vec3 color = min(HackTransparency(), vec4(1.0)).xyz;
                 vec3 absorb = exp(-Material.absorption.xyz * thickness);
 
-                fragcolor = vec4(color * absorb, 1.0);
+                fragcolor = vec4(color * absorb, 1.0f) * Light.bg_color * texture(fbo_tex, inData.tex_coord);
+                //fragcolor = texture(fbo_tex, inData.tex_coord);
                 //fragcolor = vec4(inData.tex_coord, 0.0f, 1.0f);
-                //fragcolor = ref_bg_color;
+                //fragcolor = vec4(color, 1.0f);
             }
             else
             {
