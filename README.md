@@ -2,17 +2,17 @@
 # Jello Simulation Using OpengGL :custard:
 By Angel Lam and Varun Ramakrishnan 
 
-![jiggle](sph-demo.gif)
+<img src='jiggle_sample.gif' width='50%'>
 
-
-
-![image](https://github.com/JCSaltFish/PathTracing/blob/master/images/pt01.png)
+<img src='shader_benchmark.png' width='50%'>
 source: https://blog.demofox.org/2017/01/09/raytracing-reflection-refraction-fresnel-total-internal-reflection-and-beers-law/
 
 ## Implementation 
   - Physically-based Jello Simulation using Mass-Spring System
     - Collision detection and response with the bounding box 
-      ![bounce](sph-demo.gif)
+    
+      <img src='collision_boundingbox.gif' width='50%'>
+      
   - Beer's Law 
   - Integration (Euler and Runge-Kutta 4th Order)
   - Optimization with OpenMP
@@ -24,7 +24,8 @@ source: https://blog.demofox.org/2017/01/09/raytracing-reflection-refraction-fre
   - Edit the color, absorption color, specular color of the jello's material
   - Edit the light color and position 
   - Edit/visualize physics paraeters (jello resolution, spring types, stiffness, damping, mass and timestep)
-  ![parameters](sph-demo.gif)
+  <img src='debug_shader.gif' width='50%'>
+  <img src='physics_parameters.gif' width='50%'>
 
   
 ## Evaluation and Future work
